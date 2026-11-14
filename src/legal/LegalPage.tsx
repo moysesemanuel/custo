@@ -100,7 +100,7 @@ function Terms() {
 
 export function LegalPage({ path }: { path: LegalPath }) {
   return <div className="legal-page">
-    <header className="legal-head"><a href="/" aria-label="Custô — voltar ao aplicativo"><img src="/brand/custo-black.svg" alt="Custô" className="legal-logo" /></a></header>
+    <header className="legal-head"><a href="/" aria-label="Custô — voltar ao aplicativo"><img src="/brand/custo-green.svg" alt="Custô" className="legal-logo" /></a></header>
     <main className="legal-card">
       <p className="legal-draft" role="note"><strong>Minuta em revisão.</strong> Este texto ainda não é a versão definitiva e depende de revisão jurídica.</p>
       {path === '/privacidade' ? <Privacy /> : <Terms />}
