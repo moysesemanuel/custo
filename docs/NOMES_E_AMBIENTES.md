@@ -9,7 +9,7 @@ Fonte única no código: [`scripts/environments.mjs`](../scripts/environments.mj
 
 | Ambiente | Pages | Endereço | Worker | D1 | APP_ENV | Estado |
 |---|---|---|---|---|---|---|
-| Staging (novo) | `dabi-custo-staging` | https://dabi-custo-staging.pages.dev | `dabi-orcamentos-staging` | `dabi-orcamentos-staging` | `staging` | Pages **a criar** (Plano A) |
+| Staging (novo) | `dabi-custo-staging` | https://dabi-custo-staging.pages.dev | `dabi-orcamentos-staging` | `dabi-orcamentos-staging` | `staging` | **No ar** (Etapa 14.1); gera os links públicos novos (Etapa 14.2) |
 | Staging (legado) | `dabi-preco-certo-staging` | https://dabi-preco-certo-staging.pages.dev | o mesmo acima | o mesmo acima | `staging` | **No ar e preservado** durante a convivência |
 | Produção | `dabi-custo` | https://custo.dabitech.com.br | `dabi-custo-api` | `dabi-custo-producao` | `production` | **A criar** (Plano B) |
 | Ensaio de restauração | — | — | — | `dabi-custo-restauracao` | — | A criar quando for ensaiar |

@@ -1,6 +1,11 @@
 # Plano A: migrar o staging para `dabi-custo-staging.pages.dev`
 
-Preparado localmente na Etapa 13 (14/11/2026). **Nada foi criado nem publicado.** Cada passo remoto exige autorização própria.
+Preparado na Etapa 13 (14/11/2026).
+
+**Estado (14/11/2026):**
+- **Passos 1 a 8 (Etapa 14.1):** executados e homologados. O Worker `2e4da2b3` liberou as duas origens e o Pages `dabi-custo-staging` foi publicado (deployment `fe36eee1`).
+- **Passo 9 (Etapa 14.2):** `PUBLIC_BASE_URL` de staging trocado para o endereço novo.
+- **Pages antigo:** continua no ar; os critérios de desligamento estão no fim deste documento.
 
 ## Por que é um projeto novo
 

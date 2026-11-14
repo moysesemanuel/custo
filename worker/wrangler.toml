@@ -38,10 +38,11 @@ workers_dev = true
 
 # Worker e D1 de staging PRESERVADOS com o nome antigo (guardam os dados da homologação).
 # Convivência de endereços (Etapa 13): o Pages novo `dabi-custo-staging` e o antigo `dabi-preco-certo-staging` usam este mesmo
-# Worker, então as DUAS origens precisam estar liberadas. PUBLIC_BASE_URL (endereço dos NOVOS links públicos) só muda para o
-# endereço novo depois que ele for validado (docs/MIGRACAO_STAGING_CUSTO.md); links antigos continuam válidos nos dois hosts.
+# Worker, então as DUAS origens precisam estar liberadas. PUBLIC_BASE_URL (endereço dos NOVOS links públicos) passou para o
+# endereço novo depois da homologação (Etapa 14.2); links já enviados com o endereço antigo continuam válidos nos dois hosts
+# enquanto o Pages antigo existir (o banco guarda só o id do link, nunca a URL).
 [env.staging.vars]
-PUBLIC_BASE_URL = "https://dabi-preco-certo-staging.pages.dev"
+PUBLIC_BASE_URL = "https://dabi-custo-staging.pages.dev"
 ALLOWED_ORIGINS = "https://dabi-custo-staging.pages.dev,https://dabi-preco-certo-staging.pages.dev,http://localhost:5174,http://127.0.0.1:5174"
 APP_ENV = "staging"
 LEGACY_KEY_AUTH = "off"
