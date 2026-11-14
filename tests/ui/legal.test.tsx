@@ -32,7 +32,7 @@ describe('páginas jurídicas', () => {
   it('a política traz as bases legais, os papéis (controlador/operador) e a transferência internacional fornecidos; os termos, cancelamento e foro', () => {
     render(<LegalPage path="/privacidade" />);
     let text = document.body.textContent ?? '';
-    for (const s of ['execução de contrato ou de procedimentos preliminares', 'estes são, em regra, os controladores', 'O Custô atua como operador desses dados', 'transferência internacional de dados', 'Rua Frederico Maurer, Boqueirão, Curitiba/PR, Brasil']) expect(text, s).toContain(s);
+    for (const s of ['execução de contrato ou de procedimentos preliminares', 'estes são, em regra, os controladores', 'O Custô atua como operador desses dados', 'transferência internacional de dados', 'Rua Frederico Maurer, Boqueirão, Curitiba/PR, Brasil', 'de segunda a quinta, das 9h às 18h, e sexta, das 9h às 16h']) expect(text, s).toContain(s);
     expect(text).not.toMatch(/PENDENTE: (base legal|papéis|análise de transferência|endereço)/);
     document.body.innerHTML = '';
     render(<LegalPage path="/termos" />);

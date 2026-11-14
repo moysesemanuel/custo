@@ -17,7 +17,7 @@ function Privacy() {
   return <>
     <h1>Política de privacidade</h1>
     <h2>1. Quem trata os dados</h2>
-    <p>O Custô é um serviço da DaBi Tech. Controlador: 57.936.721 Moyses Emanuel Costa Silva, CNPJ 57.936.721/0001-25. Endereço: Rua Frederico Maurer, Boqueirão, Curitiba/PR, Brasil. Canal de privacidade (art. 41 da LGPD): <a href="mailto:contato@dabitech.com.br">contato@dabitech.com.br</a>.</p>
+    <p>O Custô é um serviço da DaBi Tech. Controlador: 57.936.721 Moyses Emanuel Costa Silva, CNPJ 57.936.721/0001-25. Endereço: Rua Frederico Maurer, Boqueirão, Curitiba/PR, Brasil. Canal de privacidade (art. 41 da LGPD): <a href="mailto:contato@dabitech.com.br">contato@dabitech.com.br</a>, com atendimento de segunda a quinta, das 9h às 18h, e sexta, das 9h às 16h (horário de Brasília).</p>
     <h2>2. Quais dados o Custô guarda</h2>
     <ul>
       <li><strong>Conta:</strong> seu e-mail, a data de criação e de confirmação, e as sessões abertas (nome do dispositivo informado no login, datas de criação, último uso e expiração).</li>
