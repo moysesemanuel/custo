@@ -1,19 +1,94 @@
-# Worker de compartilhamento de orçamentos do DaBi Preço Certo.
-# Nenhum deploy nem DNS foi configurado: este arquivo serve para desenvolvimento local (wrangler dev / d1 --local).
-name = "dabi-orcamentos"
+# Worker do Custô (API: contas, sincronização, painel e orçamentos públicos).
+# A seção de topo serve SÓ para desenvolvimento local (wrangler dev / d1 --local). Publicações usam sempre --env staging|production,
+# pelos scripts protegidos (scripts/worker.mjs), que validam esta configuração antes (scripts/environments.mjs).
+# O nome local não coincide com nenhum Worker publicado: um `wrangler deploy` sem --env nunca sobrescreve staging ou produção.
+name = "dabi-custo-local"
 main = "src/index.ts"
 compatibility_date = "2025-09-01"
 workers_dev = false
 
 [vars]
-# Origem usada para montar os links curtos devolvidos pela API (quando a publicação for habilitada).
-PUBLIC_BASE_URL = "https://orcamento.dabitech.com.br"
+# Origem usada para montar os links curtos devolvidos pela API (desenvolvimento local: o próprio `wrangler dev`).
+PUBLIC_BASE_URL = "http://localhost:8787"
 # Origens do app autorizadas a chamar a API (CORS). Valores de DESENVOLVIMENTO: troque pela origem real do app antes do deploy.
 ALLOWED_ORIGINS = "http://localhost:5174,http://127.0.0.1:5174"
+# Autenticação antiga por chave de licença (Bearer). Desligada por padrão; use "on" apenas para migrar clientes antigos.
+LEGACY_KEY_AUTH = "off"
+# Segredos (NÃO ficam aqui): AUTH_SECRET -> `wrangler secret put AUTH_SECRET`; em desenvolvimento, worker/.dev.vars (veja .dev.vars.example).
+# EMAIL_ADAPTER: sem valor = sem envio (login responde 503). "dev" = imprime no terminal, só para desenvolvimento.
 
 [[d1_databases]]
 binding = "DB"
+# Nome LEGADO mantido de propósito: é o arquivo do banco local de desenvolvimento (trocar o nome "esconderia" os dados locais).
 database_name = "dabi-orcamentos"
 # Placeholder para uso local. Antes de qualquer deploy, crie o banco no Cloudflare e substitua pelo ID real.
 database_id = "00000000-0000-0000-0000-000000000000"
 migrations_dir = "migrations"
+
+# ---------------------------------------------------------------------------------------------------------------------
+# AMBIENTES SEPARADOS (nada abaixo foi criado nem publicado). Cada ambiente tem o próprio banco D1, as próprias variáveis e os
+# próprios segredos. As variáveis [vars] NÃO são herdadas: repita todas. Os `database_id` abaixo são marcadores: o deploy falha
+# até serem trocados pelos IDs reais (criados com `wrangler d1 create`), o que evita publicar por engano.
+# Os endereços são EXEMPLOS: ajuste para os domínios reais ao implantar (DNS não é configurado por este repositório).
+# Segredos (por ambiente): `wrangler secret put AUTH_SECRET --env staging|production`.
+# ---------------------------------------------------------------------------------------------------------------------
+[env.staging]
+name = "dabi-orcamentos-staging"
+workers_dev = true
+
+# Worker e D1 de staging PRESERVADOS com o nome antigo (guardam os dados da homologação).
+# Convivência de endereços (Etapa 13): o Pages novo `dabi-custo-staging` e o antigo `dabi-preco-certo-staging` usam este mesmo
+# Worker, então as DUAS origens precisam estar liberadas. PUBLIC_BASE_URL (endereço dos NOVOS links públicos) passou para o
+# endereço novo depois da homologação (Etapa 14.2); links já enviados com o endereço antigo continuam válidos nos dois hosts
+# enquanto o Pages antigo existir (o banco guarda só o id do link, nunca a URL).
+[env.staging.vars]
+PUBLIC_BASE_URL = "https://dabi-custo-staging.pages.dev"
+ALLOWED_ORIGINS = "https://dabi-custo-staging.pages.dev,https://dabi-preco-certo-staging.pages.dev,http://localhost:5174,http://127.0.0.1:5174"
+APP_ENV = "staging"
+LEGACY_KEY_AUTH = "off"
+# E-mail pelo Resend. Sem o segredo RESEND_API_KEY o login responde 503 (nada finge ser enviado).
+# Segredo: `wrangler secret put RESEND_API_KEY --env staging`. EMAIL_FROM precisa ser um remetente de domínio verificado no Resend.
+EMAIL_ADAPTER = "resend"
+EMAIL_FROM = "Custô <acesso@mail.dabitech.com.br>"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "dabi-orcamentos-staging"
+database_id = "6d6b478a-efe5-4ab1-a99e-07b6c5c1dc64"
+migrations_dir = "migrations"
+
+# PRODUÇÃO (ainda não criada). Recursos novos com o prefixo dabi-custo. Domínio: https://custo.dabitech.com.br
+# Sem rota nem workers.dev: o Worker só recebe tráfego pelo Service Binding `API` do Pages de produção `dabi-custo`.
+[env.production]
+name = "dabi-custo-api"
+workers_dev = false
+
+[env.production.vars]
+PUBLIC_BASE_URL = "https://custo.dabitech.com.br"
+ALLOWED_ORIGINS = "https://custo.dabitech.com.br"
+# Guarda de ambiente: recusa (421) chamadas de um front-end de outro ambiente. Obrigatória (o script de publicação confere).
+APP_ENV = "production"
+LEGACY_KEY_AUTH = "off"
+# Segredos EXCLUSIVOS de produção (nunca reutilizar os de staging): AUTH_SECRET e RESEND_API_KEY via `wrangler secret put ... --env production`.
+EMAIL_ADAPTER = "resend"
+# Mesmo remetente já verificado no Resend (domínio mail.dabitech.com.br); só o nome de exibição é do Custô.
+EMAIL_FROM = "Custô <acesso@mail.dabitech.com.br>"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "dabi-custo-producao"
+# Marcador: a publicação é RECUSADA até ser trocado pelo ID real criado com `npx wrangler d1 create dabi-custo-producao`.
+database_id = "SUBSTITUIR-PELO-ID-DO-D1-DE-PRODUCAO"
+migrations_dir = "migrations"
+
+# Banco SÓ para ensaiar restauração de backups (`npm run d1 -- restore-file --env restore --file backup.sql`). Nunca recebe dados reais por outro caminho.
+[env.restore]
+name = "dabi-custo-restauracao"
+workers_dev = false
+
+[[env.restore.d1_databases]]
+binding = "DB"
+database_name = "dabi-custo-restauracao"
+database_id = "SUBSTITUIR-PELO-ID-DO-D1-DE-RESTAURACAO"
+migrations_dir = "migrations"
+
