@@ -1,7 +1,7 @@
 .legal-page{min-height:100vh;background:var(--color-background);color:var(--color-text);padding:24px 16px 64px}
 .legal-head{max-width:760px;margin:0 auto 18px}.legal-logo{height:34px;width:auto;display:block}
 .legal-card{max-width:760px;margin:0 auto;background:var(--color-surface);border:1px solid var(--color-border);border-radius:17px;padding:28px;box-shadow:0 6px 25px var(--color-shadow);line-height:1.65;font-size:15px;overflow-wrap:anywhere}
-.legal-card h1{font-size:28px;letter-spacing:-.03em;margin:8px 0 18px}.legal-card h2{font-size:17px;margin:26px 0 8px}
+.legal-card h1{font-size:28px;letter-spacing:-.03em;margin:8px 0 18px}.legal-card h2{font-size:17px;margin:26px 0 8px}.legal-card h3{font-size:15px;margin:18px 0 6px}
 .legal-card ul{padding-left:20px}.legal-card li{margin:6px 0}
 .legal-draft{background:var(--color-warning-soft);color:var(--color-warning);border-radius:12px;padding:12px 14px;font-size:14px;margin:0}
 .legal-pending{background:var(--color-warning-soft);color:var(--color-warning);border-radius:4px;padding:0 4px;font-weight:600}

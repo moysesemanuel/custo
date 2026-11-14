@@ -22,6 +22,12 @@ describe('páginas jurídicas', () => {
     const text = document.body.textContent ?? '';
     for (const s of ['e-mail', 'hash', 'IndexedDB', 'Cloudflare', 'Resend', 'Backup', 'nome que você informar para cada cliente']) expect(text, s).toContain(s);
   });
+  it('os termos trazem as condições do beta fornecidas (90 dias, gratuito, sem cobrança automática, horário de suporte)', () => {
+    render(<LegalPage path="/termos" />);
+    const text = document.body.textContent ?? '';
+    for (const s of ['beta fechado e gratuito', '90 (noventa) dias', 'Não haverá cobrança automática ao final do beta.', 'de segunda a quinta-feira, das 9h às 18h, e às sextas-feiras, das 9h às 16h', 'sem garantia de prazo específico']) expect(text, s).toContain(s);
+    expect(text).not.toMatch(/PENDENTE: (condições comerciais|horário de suporte)/);
+  });
   it('reconhece só os dois caminhos (com ou sem barra final)', () => {
     expect(isLegalPath('/privacidade')).toBe(true); expect(isLegalPath('/termos/')).toBe(true);
     expect(isLegalPath('/admin')).toBe(false); expect(isLegalPath('/')).toBe(false);

@@ -10,7 +10,7 @@
 4. Papéis em relação aos **dados dos clientes finais** que o confeiteiro registra (o Custô como operador?) e as responsabilidades.
 5. Transferência internacional: Cloudflare e Resend podem processar fora do Brasil (arts. 33 a 36).
 6. Prazos de retenção definitivos (proposta em `EXCLUSAO_DE_CONTA.md`) e prazo de resposta aos titulares.
-7. Condições comerciais do beta (preço, duração, o que acontece ao fim), horário de suporte (canal: contato@dabitech.com.br), cancelamento, foro.
+7. ~~Condições do beta e horário de suporte~~ — texto fornecido em 2026-11-14 (termos, seção 7: 90 dias gratuitos, sem cobrança automática, suporte seg–qui 9h–18h e sex 9h–16h). **Pendentes:** regras de cancelamento e aviso prévio (seção 8) e foro.
 8. Data de vigência dos documentos.
 
 ## Dados tratados (inventário verificado no esquema)
@@ -44,5 +44,5 @@ Fornecedores: Cloudflare (Pages, Workers, D1) e Resend (e-mail). Não há analyt
 
 ## Canal de suporte e incidentes
 
-- **Canal:** contato@dabitech.com.br (suporte e privacidade). Falta definir horário e prazo de resposta.
+- **Canal:** contato@dabitech.com.br (suporte e privacidade). Horário: seg–qui 9h–18h, sex 9h–16h (Brasília), sem prazo garantido de resposta durante o beta.
 - **Incidente com dados:** seguir `MONITORAMENTO.md` §5 (conter, preservar evidências, avaliar o risco, comunicar).

@@ -48,7 +48,7 @@ function Terms() {
   return <>
     <h1>Termos de uso</h1>
     <h2>1. O serviço</h2>
-    <p>O Custô ajuda pequenos produtores de alimentos a calcular custos e preços, organizar encomendas e recebimentos e enviar orçamentos. Fornecedor: 57.936.721 Moyses Emanuel Costa Silva, CNPJ 57.936.721/0001-25.</p>
+    <p>O Custô ajuda pequenos produtores de alimentos a calcular custos e preços, organizar encomendas e recebimentos e enviar orçamentos. Fornecedor: 57.936.721 Moyses Emanuel Costa Silva, CNPJ 57.936.721/0001-25. Canal oficial de atendimento: <a href="mailto:contato@dabitech.com.br">contato@dabitech.com.br</a>.</p>
     <h2>2. Acesso</h2>
     <p>O acesso é pessoal, por código enviado ao e-mail cadastrado, e depende de uma licença ativa. Cada conta pode ter até duas sessões abertas ao mesmo tempo. Você é responsável por manter seu e-mail seguro.</p>
     <h2>3. Seus dados e responsabilidades</h2>
@@ -60,7 +60,23 @@ function Terms() {
     <h2>6. Disponibilidade e cópias de segurança</h2>
     <p>Trabalhamos para manter o serviço disponível e fazemos cópias de segurança, mas não há garantia de funcionamento ininterrupto. Recomendamos exportar seus dados em <strong>Backup</strong> regularmente.</p>
     <h2>7. Condições do beta fechado</h2>
-    <p>Durante o beta, o Custô está em evolução: funcionalidades podem mudar e falhas podem acontecer. Condições comerciais do beta (preço, duração e o que acontece ao final): <Pending>condições comerciais do beta</Pending>. Canal de suporte: <a href="mailto:contato@dabitech.com.br">contato@dabitech.com.br</a> (horário de atendimento: <Pending>horário de suporte</Pending>).</p>
+    <p>O Custô está disponível inicialmente em modalidade de <strong>beta fechado e gratuito</strong>, destinada a um grupo limitado de usuários convidados para testar suas funcionalidades e contribuir com a evolução da plataforma.</p>
+    <h3>7.1. Duração e gratuidade</h3>
+    <p>O período de participação no beta será de 90 (noventa) dias, contados a partir da ativação da conta, sem cobrança de mensalidades ou taxas de adesão.</p>
+    <h3>7.2. Funcionalidades e disponibilidade</h3>
+    <p>Durante o beta, os participantes poderão utilizar as funcionalidades disponibilizadas no Custô, incluindo precificação de receitas, gerenciamento de ingredientes, embalagens, encomendas, recebimentos e orçamentos.</p>
+    <p>Por se tratar de uma versão em avaliação, funcionalidades poderão ser modificadas, aprimoradas ou descontinuadas. Poderão ocorrer falhas, interrupções temporárias e períodos de manutenção, que serão tratados conforme a disponibilidade operacional do serviço.</p>
+    <h3>7.3. Encerramento do beta</h3>
+    <p>Ao término do período gratuito, o Custô poderá oferecer planos comerciais para continuidade da utilização.</p>
+    <p>A adesão a eventual plano pago será opcional e dependerá da aceitação expressa do usuário. <strong>Não haverá cobrança automática ao final do beta.</strong></p>
+    <p>Caso o usuário opte por não continuar, poderá solicitar a exportação dos seus dados, observadas as funcionalidades disponíveis, a política de privacidade e os prazos de retenção aplicáveis.</p>
+    <p>O encerramento, a suspensão ou a prorrogação do beta serão comunicados com antecedência razoável, sempre que possível.</p>
+    <h3>7.4. Suporte</h3>
+    <p>Durante o beta, os participantes poderão entrar em contato pelos canais oficiais de atendimento informados na plataforma.</p>
+    <p>O atendimento será realizado, em regra, de segunda a quinta-feira, das 9h às 18h, e às sextas-feiras, das 9h às 16h, no horário de Brasília, exceto feriados.</p>
+    <p>O suporte será prestado conforme a disponibilidade da equipe, sem garantia de prazo específico de resposta ou resolução.</p>
+    <h3>7.5. Feedback dos participantes</h3>
+    <p>Os participantes poderão encaminhar sugestões, relatos de erros e comentários sobre a experiência de utilização. As contribuições poderão ser consideradas no desenvolvimento e aprimoramento do Custô, sem obrigação de implementação.</p>
     <h2>8. Encerramento</h2>
     <p>Você pode pedir o encerramento da conta e a exclusão dos dados a qualquer momento (veja a Política de privacidade). <Pending>regras de cancelamento e aviso prévio</Pending>.</p>
     <h2>9. Lei e foro</h2>
