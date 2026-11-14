@@ -147,7 +147,14 @@ describe('Consumo estimado de uma aba (relógio simulado)', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
     await act(async () => { await vi.advanceTimersByTimeAsync(hours * 3_600_000); });
     expect(syncCalls().length - base).toBe(expected); // sem polling: nenhum temporizador periódico
-    for (let i = 0; i < 20; i++) { await act(async () => { await vi.advanceTimersByTimeAsync(5 * 60_000); window.dispatchEvent(new Event('focus')); await vi.advanceTimersByTimeAsync(50); for (let k = 0; k < 400 && inflight > 0; k++) await vi.advanceTimersByTimeAsync(10); await vi.advanceTimersByTimeAsync(50); }); } // espera o ciclo terminar (o Worker de teste leva tempo REAL)
+    // Cada retorno de foco precisa produzir a SUA verificação antes do próximo. Esperar só `inflight === 0` não basta: o ciclo continua
+    // depois da resposta (estado no IndexedDB, rebase) e um foco nesse intervalo vira uma rodada adiada, que podia sair só depois da
+    // contagem final (causa da falha intermitente "19 em vez de 20" no CI, máquina mais lenta). O Worker de teste leva tempo REAL.
+    for (let i = 0; i < 20; i++) {
+      await act(async () => { await vi.advanceTimersByTimeAsync(5 * 60_000); window.dispatchEvent(new Event('focus')); });
+      await vi.waitFor(async () => { await act(async () => { await vi.advanceTimersByTimeAsync(10); }); expect(syncCalls().length - base).toBe(i + 1); expect(inflight).toBe(0); }, { timeout: 15_000, interval: 10 });
+    }
+    await act(async () => { await vi.advanceTimersByTimeAsync(60_000); }); // nada além disso: nenhuma requisição extra depois
     expect(syncCalls().length - base).toBe(20); // 20 retornos ao app = 20 verificações (1 requisição cada), independentemente de quantas horas passaram
     process.stdout.write(`\nAba ociosa por ${hours} h: ${expected} requisições; +20 retornos de foco: 20 requisições (antes da correção, em desenvolvimento: ≈ ${Math.round(hours * 3600 / 2.5)} pulls)\n`);
   }, 60_000);
