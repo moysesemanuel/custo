@@ -1,4 +1,6 @@
-# PedidoCerto — MVP v0.1
+# Custô — Seu custo na ponta do lápis. Seu lucro na mão.
+
+Repositório: `moysesemanuel/custo` (antes `dabi-preco-certo`; o GitHub redireciona o nome antigo). Nomes legados que continuam existindo de propósito estão em [`docs/NOMES_E_AMBIENTES.md`](docs/NOMES_E_AMBIENTES.md).
 
 Aplicação independente da DaBi Price. Stack: React 19 + TypeScript + Vite 6 + Tailwind CSS 4. Persistência local com IndexedDB.
 
@@ -33,6 +35,11 @@ npm test
 - [`docs/HOMOLOGACAO_PRE_BETA.md`](docs/HOMOLOGACAO_PRE_BETA.md): homologação pré-beta (o que foi testado em navegador real, o que falta, checklist manual e critérios de aprovação).
 - [`docs/AUDITORIA_SEGURANCA_PRE_BETA.md`](docs/AUDITORIA_SEGURANCA_PRE_BETA.md): auditoria de segurança pré-beta (achados, testes negativos, riscos residuais, recomendação).
 - [`docs/POLITICA_DE_CUSTOS.md`](docs/POLITICA_DE_CUSTOS.md): **política de infraestrutura de custo zero** (limites gratuitos verificados, metas, medição com `npm run costs`, proteções, upgrade). Vale para toda nova funcionalidade.
+- [`docs/NOMES_E_AMBIENTES.md`](docs/NOMES_E_AMBIENTES.md): nomes oficiais (repositório `custo`, Pages, Worker, D1), legados mantidos de propósito e as guardas contra mistura de ambientes.
+- [`docs/MIGRACAO_STAGING_CUSTO.md`](docs/MIGRACAO_STAGING_CUSTO.md): Plano A, staging em `dabi-custo-staging.pages.dev` mantendo o Worker e o D1.
+- [`docs/IMPLANTACAO_PRODUCAO.md`](docs/IMPLANTACAO_PRODUCAO.md): Plano B, produção em `custo.dabitech.com.br`, e correção para a frente.
+- [`docs/PRIVACIDADE_E_TERMOS.md`](docs/PRIVACIDADE_E_TERMOS.md) e [`docs/EXCLUSAO_DE_CONTA.md`](docs/EXCLUSAO_DE_CONTA.md): minutas (páginas `/privacidade` e `/termos`), pendências jurídicas, exclusão de conta e retenção.
+- [`docs/MONITORAMENTO.md`](docs/MONITORAMENTO.md): runbook do beta (limiares, laço de gravações, login, indisponibilidade, incidentes).
 - [`docs/DIAGNOSTICO_SYNC_ETAPA_11.md`](docs/DIAGNOSTICO_SYNC_ETAPA_11.md): causa e correção da "Falha ao sincronizar" no staging (lista vazia de embalagens × campo omitido pelo servidor), proteção contra reenvio em laço e diagnóstico opcional da sincronização.
 - [`docs/ETAPA_11_PEDIDOS_MULTIPLOS.md`](docs/ETAPA_11_PEDIDOS_MULTIPLOS.md): encomendas com várias receitas, confirmação automática por pagamento, orçamento público sem discriminar embalagens, migração 0012 e protocolo de sincronização v2.
 - [`docs/EMBALAGENS_E_PRECISAO_MONETARIA.md`](docs/EMBALAGENS_E_PRECISAO_MONETARIA.md): catálogo e custo de embalagens, precisão monetária, snapshots, compatibilidade de sync e preparação local da migration 0010.
@@ -45,7 +52,7 @@ npm test
 - `src/domain/pricing.ts`: `recipeCost` (custo total, unitário e preço sugerido; margem **sobre o preço de venda**: `custo / (1 − margem%)`; devolve também as linhas por ingrediente com a medida original e a convertida; lança erro em português se uma conversão necessária falhar) e `money`.
 - `src/features/measurement/`: conversor de medidas. `convert.ts` (motor puro, retorna `ConversionResult` com erros controlados), `units.ts` (unidades, rótulos e formatação), `catalog/` (catálogo local e versionado de equivalências culinárias, gerado do USDA FoodData Central por `scripts/catalog/build_catalog.py`; busca por nome, apresentações e referência adotada), `densities.ts` (fachada de compatibilidade sobre o catálogo), `subject.ts` e `components/` (`MeasurementConverter`, `IngredientCombobox`). Equivalência efetiva de um ingrediente: `src/domain/equivalence.ts`. Os ids de unidade gravados nos dados são `g, kg, ml, l, un, xic, cs, cc` (equivalentes a `cup`, `tbsp`, `tsp`, `unit` do contrato sugerido; mantidos para não migrar dados existentes).
 - `src/domain/edit.ts`: funções puras de edição (`updateIngredient`, `updateRecipe`, `updateOrder`, `removeOrder`, `unitChangeAffectsRecipes`).
-- `src/storage/db.ts`: persistência no IndexedDB (`pedidocerto-v1`) e `validateBackup`.
+- `src/storage/db.ts`: persistência no IndexedDB (`pedidocerto-v1`, nome legado mantido para não perder os dados locais) e `validateBackup`.
 - `src/App.tsx`: casca da aplicação (carregar/salvar dados, navegação, avisos). Repassa `data`, `update`, `inform` e `focus` às páginas.
 - `src/pages/`: uma página por arquivo (`DashboardPage`, `IngredientsPage`, `RecipesPage`, `OrdersPage`, `ConverterPage`, `BackupPage`), cada uma com seu próprio estado de formulário.
 - `src/components/Field.tsx` e `src/utils.ts`: campo de formulário e utilitários compartilhados (`parse`, `newId`, `brDate`, `priceRecipe`, `cupSizeOf`, tipos `Page`/`PageProps`).
