@@ -1,6 +1,23 @@
 # Plano B: implantação da produção em `https://custo.dabitech.com.br`
 
-Preparado na Etapa 13 (14/11/2026); substitui as seções de produção de `ETAPA_7_PREPARACAO_PRODUCAO.md`. **Nada foi criado.** Cada passo remoto exige autorização própria. Nomes e guardas: [`NOMES_E_AMBIENTES.md`](NOMES_E_AMBIENTES.md).
+Preparado na Etapa 13 (14/11/2026); substitui as seções de produção de `ETAPA_7_PREPARACAO_PRODUCAO.md`.
+
+**Estado em 14/11/2026: produção no ar em https://custo.dabitech.com.br.**
+- **Concluído:**
+  - PR #1 na `main`;
+  - D1 `dabi-custo-producao` com as 12 migrações, vazio (sem dados de staging);
+  - Worker `dabi-custo-api` e `AUTH_SECRET` exclusivo;
+  - Pages `dabi-custo` com `APP_ENV=production` e `API` → `dabi-custo-api` (Preview sem binding);
+  - CNAME `custo` → `dabi-custo.pages.dev` na Vercel, sem tocar no wildcard;
+  - certificado emitido;
+  - licença do proprietário;
+  - backup inicial verificado.
+- **Falta:**
+  - `RESEND_API_KEY` de produção (o login responde 503 até lá);
+  - primeiro login e `grant-admin` do proprietário;
+  - `clientIpReceived` (passo 14);
+  - validação funcional (passos 15 a 18);
+  - revisão jurídica das minutas e canal de suporte. Nomes e guardas: [`NOMES_E_AMBIENTES.md`](NOMES_E_AMBIENTES.md).
 
 ## Já pronto localmente
 
