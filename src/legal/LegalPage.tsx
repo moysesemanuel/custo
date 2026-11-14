@@ -17,7 +17,7 @@ function Privacy() {
   return <>
     <h1>Política de privacidade</h1>
     <h2>1. Quem trata os dados</h2>
-    <p>O Custô é um serviço da DaBi Tech. Controlador: 57.936.721 Moyses Emanuel Costa Silva, CNPJ 57.936.721/0001-25. Endereço: <Pending>endereço</Pending>. Canal de privacidade (art. 41 da LGPD): <a href="mailto:contato@dabitech.com.br">contato@dabitech.com.br</a>.</p>
+    <p>O Custô é um serviço da DaBi Tech. Controlador: 57.936.721 Moyses Emanuel Costa Silva, CNPJ 57.936.721/0001-25. Endereço: Rua Frederico Maurer, Boqueirão, Curitiba/PR, Brasil. Canal de privacidade (art. 41 da LGPD): <a href="mailto:contato@dabitech.com.br">contato@dabitech.com.br</a>.</p>
     <h2>2. Quais dados o Custô guarda</h2>
     <ul>
       <li><strong>Conta:</strong> seu e-mail, a data de criação e de confirmação, e as sessões abertas (nome do dispositivo informado no login, datas de criação, último uso e expiração).</li>
@@ -28,11 +28,18 @@ function Privacy() {
       <li><strong>No seu aparelho:</strong> uma cópia dos seus dados fica no armazenamento do navegador (IndexedDB) para funcionar sem internet.</li>
     </ul>
     <h2>3. Para que usamos</h2>
-    <p>Para prestar o serviço: identificar você, sincronizar seus dados entre dispositivos, calcular custos e preços, publicar os orçamentos que você escolher e proteger o serviço contra abuso. Não vendemos dados e não usamos seus dados para publicidade. Base legal: <Pending>definição na revisão jurídica (ex.: execução de contrato, art. 7º, V)</Pending>.</p>
-    <h2>4. Dados dos seus clientes</h2>
-    <p>Os nomes e informações dos seus clientes que você registra nas encomendas são tratados pelo Custô em seu nome, apenas para a finalidade do serviço. <Pending>papéis de controlador e operador e responsabilidades, a definir na revisão jurídica</Pending>.</p>
-    <h2>5. Com quem compartilhamos</h2>
-    <p>Com fornecedores necessários ao funcionamento: Cloudflare (hospedagem, processamento e banco de dados) e Resend (envio dos e-mails de acesso). Esses serviços podem processar dados fora do Brasil. <Pending>análise de transferência internacional (arts. 33 a 36 da LGPD)</Pending>.</p>
+    <p>Para prestar o serviço: identificar você, sincronizar seus dados entre dispositivos, calcular custos e preços, publicar os orçamentos que você escolher e proteger o serviço contra abuso. Não vendemos dados e não usamos seus dados para publicidade.</p>
+    <h2>4. Bases legais e responsabilidades</h2>
+    <p>O Custô trata os dados pessoais dos usuários para disponibilizar a plataforma, autenticar contas, administrar licenças, prestar suporte e proteger a segurança do serviço.</p>
+    <p>Conforme a finalidade, o tratamento poderá estar fundamentado na execução de contrato ou de procedimentos preliminares, no cumprimento de obrigações legais ou regulatórias e no legítimo interesse, quando aplicável e devidamente avaliado.</p>
+    <p>Em relação aos dados pessoais de clientes finais cadastrados pelos estabelecimentos usuários, estes são, em regra, os controladores, responsáveis por determinar a finalidade da coleta e do tratamento.</p>
+    <p>O Custô atua como operador desses dados quando realiza o tratamento em nome dos estabelecimentos, de acordo com as funcionalidades contratadas e as instruções aplicáveis.</p>
+    <p>O Custô permanece responsável pelos tratamentos em que atua como controlador, incluindo a gestão de suas próprias contas e a segurança operacional da plataforma.</p>
+    <h2>5. Com quem compartilhamos e transferência internacional</h2>
+    <p>O Custô utiliza fornecedores tecnológicos para hospedagem, armazenamento, processamento e envio de mensagens transacionais, incluindo Cloudflare e Resend.</p>
+    <p>A utilização desses serviços poderá envolver tratamento de dados pessoais fora do Brasil ou transferência internacional de dados, conforme a infraestrutura e as operações efetivamente utilizadas.</p>
+    <p>Quando houver transferência internacional, ela deverá observar os requisitos da Lei Geral de Proteção de Dados Pessoais (LGPD) e os mecanismos legais aplicáveis.</p>
+    <p>O Custô adotará medidas contratuais, técnicas e organizacionais adequadas para proteger os dados pessoais tratados por seus fornecedores.</p>
     <h2>6. Por quanto tempo</h2>
     <p>Mantemos os dados enquanto a conta existir. Após a exclusão, os dados são apagados conforme o procedimento de exclusão. Cópias de segurança são substituídas pelo ciclo de retenção dos backups. Prazos específicos: <Pending>prazos definitivos de retenção (proposta técnica em revisão)</Pending>.</p>
     <h2>7. Seus direitos</h2>
@@ -77,10 +84,17 @@ function Terms() {
     <p>O suporte será prestado conforme a disponibilidade da equipe, sem garantia de prazo específico de resposta ou resolução.</p>
     <h3>7.5. Feedback dos participantes</h3>
     <p>Os participantes poderão encaminhar sugestões, relatos de erros e comentários sobre a experiência de utilização. As contribuições poderão ser consideradas no desenvolvimento e aprimoramento do Custô, sem obrigação de implementação.</p>
-    <h2>8. Encerramento</h2>
-    <p>Você pode pedir o encerramento da conta e a exclusão dos dados a qualquer momento (veja a Política de privacidade). <Pending>regras de cancelamento e aviso prévio</Pending>.</p>
-    <h2>9. Lei e foro</h2>
-    <p>Aplica-se a legislação brasileira. Foro: <Pending>foro competente</Pending>.</p>
+    <h2>8. Cancelamento e encerramento</h2>
+    <p>O participante poderá solicitar o cancelamento de sua conta no Custô a qualquer momento, sem cobrança de multa durante o período gratuito do beta fechado.</p>
+    <p>O Custô poderá encerrar o programa beta ou descontinuar o serviço, mediante comunicação com antecedência mínima de 30 (trinta) dias, sempre que possível.</p>
+    <p>Em situações de risco à segurança, uso indevido da plataforma, determinação legal ou necessidade técnica urgente, o acesso poderá ser suspenso imediatamente, mediante justificativa quando cabível.</p>
+    <p>Antes do encerramento programado, será disponibilizada ao usuário a possibilidade de exportar seus dados pelos recursos existentes na plataforma.</p>
+    <p>A exclusão dos dados pessoais observará a Política de Privacidade, os prazos de retenção aplicáveis e as obrigações legais.</p>
+    <h2>9. Legislação e resolução de conflitos</h2>
+    <p>Estes Termos são regidos pela legislação brasileira.</p>
+    <p>Eventuais conflitos deverão ser preferencialmente resolvidos por meio de contato direto com o suporte do Custô.</p>
+    <p>Quando necessária a solução judicial, será observada a competência legal aplicável, respeitados os direitos do consumidor, inclusive quanto ao foro competente.</p>
+    <p>Para relações em que a eleição de foro seja juridicamente válida, as partes elegem o foro da Comarca de Curitiba, Paraná.</p>
   </>;
 }
 

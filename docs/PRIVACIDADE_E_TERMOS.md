@@ -2,16 +2,23 @@
 
 > **Minutas pendentes de revisão jurídica.** Nada aqui é parecer jurídico nem garante conformidade. As páginas `/privacidade` e `/termos` (`src/legal/LegalPage.tsx`) descrevem o que o sistema faz hoje e deixam **visíveis** as informações que faltam, marcadas `[PENDENTE: …]`.
 
-## Informações pendentes (precisam ser fornecidas antes do beta)
+## Informações fornecidas e pendentes
 
-1. ~~Razão social e CNPJ~~ — fornecidos em 2026-11-14: 57.936.721 Moyses Emanuel Costa Silva, CNPJ 57.936.721/0001-25. **Endereço continua pendente.**
-2. ~~Canal de privacidade (art. 41)~~ — contato@dabitech.com.br (também é o canal de suporte). Nome do encarregado não informado; a revisão jurídica decide se é exigido.
-3. Base legal de cada tratamento (proposta técnica: execução de contrato, art. 7º, V, para conta e dados de trabalho; legítimo interesse ou segurança para limites anti-abuso e auditoria).
-4. Papéis em relação aos **dados dos clientes finais** que o confeiteiro registra (o Custô como operador?) e as responsabilidades.
-5. Transferência internacional: Cloudflare e Resend podem processar fora do Brasil (arts. 33 a 36).
-6. Prazos de retenção definitivos (proposta em `EXCLUSAO_DE_CONTA.md`) e prazo de resposta aos titulares.
-7. ~~Condições do beta e horário de suporte~~ — texto fornecido em 2026-11-14 (termos, seção 7: 90 dias gratuitos, sem cobrança automática, suporte seg–qui 9h–18h e sex 9h–16h). **Pendentes:** regras de cancelamento e aviso prévio (seção 8) e foro.
-8. Data de vigência dos documentos.
+Fornecido pelo proprietário em 2026-11-14 e publicado (texto literal, sem acréscimos):
+
+- Controlador/fornecedor: 57.936.721 Moyses Emanuel Costa Silva, CNPJ 57.936.721/0001-25; endereço Rua Frederico Maurer, Boqueirão, Curitiba/PR, Brasil.
+- Canal de privacidade e suporte: contato@dabitech.com.br (seg–qui 9h–18h, sex 9h–16h, Brasília).
+- Bases legais e papéis (Custô controlador dos dados das contas; operador dos dados de clientes finais) — política, seção 4.
+- Transferência internacional (Cloudflare, Resend) — política, seção 5.
+- Condições do beta fechado (90 dias gratuitos, sem cobrança automática) — termos, seção 7.
+- Cancelamento e encerramento (aviso de 30 dias) e foro (Comarca de Curitiba/PR, ressalvados os direitos do consumidor) — termos, seções 8 e 9.
+
+**Ainda pendentes** (marcados `[PENDENTE]` na política):
+
+1. Prazos de retenção definitivos (proposta em `EXCLUSAO_DE_CONTA.md`).
+2. Prazo de resposta aos pedidos dos titulares.
+3. Data de vigência dos documentos.
+4. Revisão jurídica para retirar o aviso "Minuta em revisão". O endereço publicado não tem número; confirmar se é suficiente.
 
 ## Dados tratados (inventário verificado no esquema)
 

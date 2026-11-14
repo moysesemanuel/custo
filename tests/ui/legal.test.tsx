@@ -15,7 +15,8 @@ describe('páginas jurídicas', () => {
     expect(text).toContain('57.936.721 Moyses Emanuel Costa Silva, CNPJ 57.936.721/0001-25');
     expect(text.match(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/g)).toEqual(['57.936.721/0001-25']); // só o CNPJ informado
     expect(new Set(text.match(/[a-z0-9.-]+@[a-z0-9-]+(?:\.[a-z]+)+/gi))).toEqual(new Set(['contato@dabitech.com.br'])); // só o e-mail informado
-    expect(text).toMatch(/\[PENDENTE: /); // o que não foi fornecido continua marcado
+    if (path === '/privacidade') expect(text).toMatch(/\[PENDENTE: /); // o que não foi fornecido continua marcado
+    else expect(text).not.toMatch(/PENDENTE/); // termos completos
   });
   it('a política descreve os dados realmente guardados e os fornecedores reais', () => {
     render(<LegalPage path="/privacidade" />);
@@ -27,6 +28,16 @@ describe('páginas jurídicas', () => {
     const text = document.body.textContent ?? '';
     for (const s of ['beta fechado e gratuito', '90 (noventa) dias', 'Não haverá cobrança automática ao final do beta.', 'de segunda a quinta-feira, das 9h às 18h, e às sextas-feiras, das 9h às 16h', 'sem garantia de prazo específico']) expect(text, s).toContain(s);
     expect(text).not.toMatch(/PENDENTE: (condições comerciais|horário de suporte)/);
+  });
+  it('a política traz as bases legais, os papéis (controlador/operador) e a transferência internacional fornecidos; os termos, cancelamento e foro', () => {
+    render(<LegalPage path="/privacidade" />);
+    let text = document.body.textContent ?? '';
+    for (const s of ['execução de contrato ou de procedimentos preliminares', 'estes são, em regra, os controladores', 'O Custô atua como operador desses dados', 'transferência internacional de dados', 'Rua Frederico Maurer, Boqueirão, Curitiba/PR, Brasil']) expect(text, s).toContain(s);
+    expect(text).not.toMatch(/PENDENTE: (base legal|papéis|análise de transferência|endereço)/);
+    document.body.innerHTML = '';
+    render(<LegalPage path="/termos" />);
+    text = document.body.textContent ?? '';
+    for (const s of ['antecedência mínima de 30 (trinta) dias', 'sem cobrança de multa', 'foro da Comarca de Curitiba, Paraná', 'respeitados os direitos do consumidor']) expect(text, s).toContain(s);
   });
   it('reconhece só os dois caminhos (com ou sem barra final)', () => {
     expect(isLegalPath('/privacidade')).toBe(true); expect(isLegalPath('/termos/')).toBe(true);
