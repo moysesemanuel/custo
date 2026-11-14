@@ -3,9 +3,10 @@
  * banco e `--env` do Wrangler derivados de targets.ts, destino exibido antes de agir e confirmação extra para o que altera/substitui
  * dados de PRODUÇÃO. Nenhum comando aqui é executado pelo CI nem pelo repositório: são ações do operador.
  */
+import { existsSync } from 'node:fs';
 import { banner, confirmProduction, selectTarget, wranglerScope, type ConfirmDeps, type EnvName, type Target } from './targets.ts';
 
-export type D1Deps = ConfirmDeps & { exec(args: string[]): void; out(line: string): void; err(line: string): void };
+export type D1Deps = ConfirmDeps & { exec(args: string[]): void; out(line: string): void; err(line: string): void; /** Arquivo já existe? (padrão: sistema de arquivos) */ exists?(path: string): boolean };
 
 type Spec = { options: string[]; allowedEnvs: EnvName[]; /** altera ou substitui dados (exige confirmação em produção) */ mutating: boolean };
 const SPECS = {
@@ -92,6 +93,8 @@ export async function runD1Cli(argv: readonly string[], deps: D1Deps): Promise<n
   if (!parsed.ok) { deps.err(`Erro: ${parsed.error}`); return 1; }
   const { plan } = parsed;
   deps.err(banner(plan.target, `d1 ${plan.command}`));
+  // Um backup nunca sobrescreve outro (um export com o mesmo nome apagaria a cópia anterior sem aviso).
+  if (plan.command === 'export' && (deps.exists ?? existsSync)(plan.options['--output'])) { deps.err(`Erro: ${plan.options['--output']} já existe; escolha outro nome (nada foi exportado).`); return 1; }
   const spec: Spec = SPECS[plan.command];
   if (spec.mutating) {
     const c = await confirmProduction(plan.target, plan.target.database, plan.confirm, deps);

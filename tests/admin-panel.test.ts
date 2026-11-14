@@ -36,7 +36,7 @@ describe('Autorização no servidor', () => {
     for (const p of ['/admins', '/grant', '/customers/' + licenseOf('ana@exemplo.com') + '/admin', '/users/promote']) expect([403, 404, 405]).toContain((await raw('POST', p, { body: { email: 'ana@exemplo.com', role: 'owner' } })).status);
     expect(srv.table('admins')).toHaveLength(1);
   });
-  it('o administrador é reconhecido pelo servidor: /me confirma', async () => { const r = await A('GET', '/me'); expect(r.status).toBe(200); expect(await j(r)).toEqual({ admin: true, email: 'dono@exemplo.com' }); });
+  it('o administrador é reconhecido pelo servidor: /me confirma', async () => { const r = await A('GET', '/me'); expect(r.status).toBe(200); expect(await j(r)).toEqual({ admin: true, email: 'dono@exemplo.com', clientIpReceived: false }); }); // sem cf-connecting-ip neste pedido de teste
   it('sessão revogada não acessa a administração (nem a conta, depois de desativada)', async () => {
     const other = await srv.login('dono@exemplo.com', 'Segundo aparelho', '10.0.0.1');
     expect((await srv.request('POST', '/api/auth/logout', { session: other })).status).toBe(200);

@@ -55,7 +55,9 @@ export async function adminRoute(request: Request, env: SessionEnv, deps: AdminD
   if (!gate.ok) return gate.response;
   const admin = gate.admin;
 
-  if (path === '/api/admin/me' && method === 'GET') return json({ admin: true, email: admin.email });
+  // `clientIpReceived`: diagnóstico do limite por IP — diz SÓ se o IP real chegou ao Worker (pelo Service Binding), nunca o valor.
+  // Falso em produção = todos os clientes dividiriam o mesmo contador por IP ("unknown"): investigar antes de ampliar o beta.
+  if (path === '/api/admin/me' && method === 'GET') return json({ admin: true, email: admin.email, clientIpReceived: request.headers.has('cf-connecting-ip') });
 
   if (path === '/api/admin/overview' && method === 'GET') {
     const o = await overview(env.DB, iso, addMs(iso, -30 * DAY), addMs(iso, -7 * DAY));
