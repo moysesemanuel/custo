@@ -34,6 +34,6 @@ export function Sidebar({ activePage, onNavigate }: { activePage: Page; onNaviga
         <Icon size={18} aria-hidden="true" /><span className="nav-label">{label}</span>
       </button>)}
     </nav>
-    <div className="sidebar-foot"><strong>Versão beta</strong><br />Seus dados ficam neste navegador e na sua conta quando você entra. Exporte backups regularmente.</div>
+    <div className="sidebar-foot"><strong>Versão beta</strong><br />Seus dados ficam neste navegador e na sua conta quando você entra. Exporte backups regularmente.<div className="legal-links"><a href="/privacidade">Privacidade</a><a href="/termos">Termos</a></div></div>
   </aside>;
 }

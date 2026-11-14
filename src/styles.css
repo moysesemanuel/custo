@@ -40,3 +40,4 @@
 @media(min-width:821px) and (max-width:1000px){.orders-table-head{display:none}.order-list-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.order-list-primary{grid-column:1/-1}.order-list-status{grid-column:1/-1;display:flex;align-items:center;gap:8px}.order-mobile-label{display:block;color:var(--color-muted-text);font-size:11px;margin-bottom:3px}.order-list-row>div:not(.order-list-primary,.order-list-status){display:flex;flex-direction:column;align-items:flex-start}.order-detail-link{grid-column:1/-1;justify-content:center}}
 .order-detail-grid>*{min-width:0}
 @media(max-width:1000px){.order-detail-grid{grid-template-columns:1fr}}
+.legal-links{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;margin-top:10px}.legal-links a{color:inherit;text-decoration:underline;text-underline-offset:2px}.auth-content .legal-links{margin-top:20px}.auth-content .legal-links a{color:var(--color-primary)}

@@ -37,5 +37,6 @@ export function AccessGate({ data, children }: { data: DataSet; children: ReactN
       <div><button className="secondary" onClick={exportNow}><Download size={16} /> Baixar backup dos dados deste dispositivo</button></div>
     </section>}
     {note && <div className="notice" role="status" style={{ marginTop: 12 }}>{note}</div>}
+    <nav className="legal-links" aria-label="Documentos"><a href="/privacidade">Política de privacidade</a><a href="/termos">Termos de uso</a></nav>
   </div></main></div></div>;
 }
