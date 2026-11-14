@@ -1,7 +1,7 @@
 /**
  * Proxy same-origin do Cloudflare Pages para o Worker da API (Service Binding `API`).
  *
- * Por que existe: com app e API no MESMO host (ex.: https://precocerto.dabitech.com.br e /api/*), o cookie de sessão
+ * Por que existe: com app e API no MESMO host (ex.: https://custo.dabitech.com.br e /api/*), o cookie de sessão
  * (`__Host-dabi_session`, HttpOnly, Secure, SameSite=Lax, sem Domain) é de primeira parte e nenhuma regra de CORS entra em jogo.
  *
  * Segurança (nada aqui é um proxy aberto):

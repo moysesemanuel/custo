@@ -1,5 +1,7 @@
 # Política de infraestrutura de custo zero
 
+> **Nomes atualizados na Etapa 13 (14/11/2026).** Este documento é histórico e pode citar nomes antigos (`dabi-preco-certo`, `precocerto.dabitech.com.br`, `dabi-orcamentos`, `dabi-orcamentos-producao`). Os nomes vigentes e a convenção estão em [`NOMES_E_AMBIENTES.md`](NOMES_E_AMBIENTES.md).
+
 > **Atualização da Etapa 7 (13/11/2026):** o Pages de staging usa `usage_model=standard`. A documentação atual da Cloudflare diz que Service Bindings no modelo Standard não geram requisição faturável adicional; a antiga hipótese de dobrar o consumo não deve ser usada como fato. Métricas de staging e lacunas de medição: [ETAPA_7_PREPARACAO_PRODUCAO.md](ETAPA_7_PREPARACAO_PRODUCAO.md).
 
 **Diretriz:** manter o DaBi Preço Certo dentro dos limites **gratuitos** dos serviços, enquanto o volume de clientes permitir, **sem** limitar funcionalidades importantes nem comprometer a integridade dos dados. Vale para toda nova implementação (veja a lista de verificação no fim).

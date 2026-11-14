@@ -1,3 +1,4 @@
+# HISTÓRICO (Etapa 6). Superado pela Etapa 13: veja docs/NOMES_E_AMBIENTES.md e worker/wrangler.toml.
 --- worker/wrangler.toml (atual, local)	2026-11-12 11:45:16
 +++ worker/wrangler.toml (proposta)	2026-11-12 22:25:12
 @@ -35,7 +35,10 @@

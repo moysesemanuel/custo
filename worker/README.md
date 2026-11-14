@@ -1,6 +1,6 @@
 # Worker de orçamentos compartilhados
 
-Serviço remoto **mínimo** do DaBi Preço Certo. Ele existe só para publicar e consultar orçamentos que o vendedor quer enviar a clientes por link curto, por exemplo `https://orcamento.dabitech.com.br/o/K7mP9xQ2vL4nR8sT1wZ5aB`. O aplicativo continua local-first (IndexedDB) e **não depende** deste serviço para nada além de compartilhar orçamentos. Não é um SaaS: não há contas de clientes, painel nem sincronização.
+Serviço remoto (API) do **Custô**: contas por e-mail, sessões, licenças, sincronização entre dispositivos (`/api/sync/v2`), painel administrativo (`/api/admin`) e orçamentos públicos por link curto (`/o/<id>`). Em produção recebe tráfego **só** pelo Service Binding `API` do Pages (mesma origem do app). O aplicativo continua local-first (IndexedDB). Ambientes, nomes e guardas: [`docs/NOMES_E_AMBIENTES.md`](../docs/NOMES_E_AMBIENTES.md).
 
 ## Estado atual (nenhum deploy, nenhum DNS)
 
@@ -93,7 +93,7 @@ Pré-requisito: Node 22.18+ (o CLI executa TypeScript) e, para bancos remotos, a
 |---|---|---|
 | `local` | `dabi-orcamentos` (arquivo local) | `--local` |
 | `staging` (homologação) | `dabi-orcamentos-staging` | `--env staging --remote` |
-| `production` | `dabi-orcamentos-producao` | `--env production --remote` |
+| `production` | `dabi-custo-producao` | `--env production --remote` |
 
 Antes de qualquer operação o CLI imprime **ambiente, banco e destino**. Combinações incoerentes (`--local` com `--env staging`, opções que não pertencem ao comando, id malformado…) param antes de tocar em qualquer banco.
 
@@ -105,7 +105,7 @@ npm run licenses -- issue --env local --email voce@exemplo.com --label "dev" [--
 # homologação (D1 dabi-orcamentos-staging, remoto)
 npm run licenses -- issue --env staging --email teste1@seudominio --label "homologação"
 
-# produção (D1 dabi-orcamentos-producao, dados reais) — só com aprovação
+# produção (D1 dabi-custo-producao, dados reais) — só com aprovação
 npm run licenses -- issue --env production --email comprador@exemplo.com --label "Pedido 123"
 
 npm run licenses -- list   --env staging
@@ -117,7 +117,7 @@ npm run licenses -- revoke-sessions <lic_id> --env staging
 
 **Produção, operações destrutivas** (`revoke`, `revoke-sessions`, `grant-admin`, `revoke-admin`): exigem confirmação adicional, específica do alvo. Interativo: o CLI pede para digitar o `lic_…` (ou o e-mail, nos comandos de administrador). Automação autorizada (sem terminal): `--confirm-production <lic_id ou e-mail>` com o **mesmo** valor do comando; sem isso, nada é executado. Fora de produção a confirmação não existe e `--confirm-production` é erro.
 
-**Migrações, backup e restauração** usam o mesmo controle (`npm run d1 -- <comando> --env <ambiente>`): `migrate`, `export --output arquivo.sql`, `restore-file --file arquivo.sql` (nunca em produção; use `time-travel-restore`), `time-travel-info`, `time-travel-restore --timestamp`. Em produção, `migrate`, `restore-file` e `time-travel-restore` pedem confirmação com o **nome do banco** (`--confirm-production dabi-orcamentos-producao`). Veja `docs/BACKUP_E_RECUPERACAO.md`.
+**Migrações, backup e restauração** usam o mesmo controle (`npm run d1 -- <comando> --env <ambiente>`): `migrate`, `export --output arquivo.sql`, `restore-file --file arquivo.sql` (nunca em produção; use `time-travel-restore`), `time-travel-info`, `time-travel-restore --timestamp`. Em produção, `migrate`, `restore-file` e `time-travel-restore` pedem confirmação com o **nome do banco** (`--confirm-production dabi-custo-producao`). Veja `docs/BACKUP_E_RECUPERACAO.md`.
 
 1. O comando gera a chave, calcula o SHA-256 e envia **apenas o hash** ao D1 (a chave não vai em linha de comando nem em logs do Wrangler).
 2. A chave completa é exibida **uma única vez** no terminal. Entregue-a ao comprador por um canal seguro e guarde só o ID interno (`lic_…`). Ela não pode ser recuperada; em caso de perda ou vazamento, emita outra e revogue a antiga.

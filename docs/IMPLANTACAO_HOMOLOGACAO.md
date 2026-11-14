@@ -1,5 +1,7 @@
 # Implantação em homologação (roteiro, NÃO executado)
 
+> **Nomes atualizados na Etapa 13 (14/11/2026).** Este documento é histórico e pode citar nomes antigos (`dabi-preco-certo`, `precocerto.dabitech.com.br`, `dabi-orcamentos`, `dabi-orcamentos-producao`). Os nomes vigentes e a convenção estão em [`NOMES_E_AMBIENTES.md`](NOMES_E_AMBIENTES.md).
+
 > **Roteiro histórico obsoleto. Não execute os comandos deste arquivo.** O fluxo atual usa Pages + Service Binding e exige um SHA completo aprovado e checkout limpo. Use [PUBLICACAO_CLOUDFLARE.md](PUBLICACAO_CLOUDFLARE.md) e [ATUALIZACAO_STAGING.md](ATUALIZACAO_STAGING.md); o projeto staging já existe, as migrações 0001–0009 foram aplicadas e não é necessário criar banco, segredos ou licença para este release.
 
 Este roteiro descreve como publicar o ambiente de **homologação**. Nada daqui foi executado: criar o banco, definir segredos, publicar o Worker e configurar domínio/DNS são ações **suas**, com credenciais da Cloudflare.

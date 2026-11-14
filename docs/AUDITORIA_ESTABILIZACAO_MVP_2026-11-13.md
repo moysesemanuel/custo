@@ -1,5 +1,7 @@
 # Auditoria de estabilização do MVP — 13/11/2026
 
+> **Nomes atualizados na Etapa 13 (14/11/2026).** Este documento é histórico e pode citar nomes antigos (`dabi-preco-certo`, `precocerto.dabitech.com.br`, `dabi-orcamentos`, `dabi-orcamentos-producao`). Os nomes vigentes e a convenção estão em [`NOMES_E_AMBIENTES.md`](NOMES_E_AMBIENTES.md).
+
 ## Escopo e fotografia do código
 
 Auditoria local do Custô na branch `feat/etapa-1-beta`. O HEAD-base desta análise era `1b152a3` (`feat: rebrand Custo and update application navigation`); as correções descritas abaixo são posteriores a esse commit e ainda precisam ser revisadas e publicadas. Não houve deploy, escrita remota, solicitação de código por e-mail, alteração de D1, DNS, secrets, licenças, administradores ou backups.

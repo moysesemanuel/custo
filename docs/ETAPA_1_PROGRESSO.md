@@ -1,5 +1,7 @@
 # Etapa 1 (beta) — Progresso
 
+> **Nomes atualizados na Etapa 13 (14/11/2026).** Este documento é histórico e pode citar nomes antigos (`dabi-preco-certo`, `precocerto.dabitech.com.br`, `dabi-orcamentos`, `dabi-orcamentos-producao`). Os nomes vigentes e a convenção estão em [`NOMES_E_AMBIENTES.md`](NOMES_E_AMBIENTES.md).
+
 Branch: `feat/etapa-1-beta`. Nada foi publicado, nenhum DNS foi alterado e nenhuma credencial real foi usada.
 
 ## Fase 1 — Integridade financeira e persistência local: CONCLUÍDA

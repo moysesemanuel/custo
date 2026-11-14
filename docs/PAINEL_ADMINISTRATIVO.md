@@ -94,9 +94,9 @@ Autorização no servidor (usuário comum e sessão revogada/desativada/licença
 8. Celular (320/375/390 px) e Safari/Firefox: login, lista, detalhe, modais, rolagem, botões de 44 px. O proprietário informou teste em celular físico no staging; matriz completa de navegadores não foi informada.
 9. Desligar a rede e tentar suspender: a tela deve avisar que não foi confirmado.
 
-## 12. Publicação futura em `https://precocerto.dabitech.com.br/admin`
+## 12. Publicação futura em `https://custo.dabitech.com.br/admin`
 
-- **Mesma origem, cookie de primeira parte.** Servir o app e a API no mesmo host elimina cookies entre sites: o cookie `__Host-dabi_session` (Secure, sem Domain, `Path=/`) já é compatível. Pré-requisitos: `ALLOWED_ORIGINS` com `https://precocerto.dabitech.com.br` (o `Origin` das requisições `POST` precisa estar na lista) e o app com `VITE_API_URL=same-origin`.
+- **Mesma origem, cookie de primeira parte.** Servir o app e a API no mesmo host elimina cookies entre sites: o cookie `__Host-dabi_session` (Secure, sem Domain, `Path=/`) já é compatível. Pré-requisitos: `ALLOWED_ORIGINS` com `https://custo.dabitech.com.br` (o `Origin` das requisições `POST` precisa estar na lista) e o app com `VITE_API_URL=same-origin`.
 - **Arquitetura escolhida para produção:** Cloudflare Pages para o app; Pages Functions em `/api/*` e `/o/*` encaminham ao Worker por Service Binding `API`. O plano de configuração e isolamento do Preview está em `ETAPA_7_PREPARACAO_PRODUCAO.md`.
 - O build já gera `_headers` com CSP (`connect-src 'self'`, ou a API) e cabeçalhos `noindex`/`no-store` para `/admin`; com Workers Static Assets, o arquivo `_headers` também é respeitado.
 - O painel é um *chunk* separado (≈25 KB, 8 KB comprimido): clientes comuns nunca o baixam.

@@ -1,5 +1,7 @@
 # Publicação na Cloudflare Pages (Etapa 6)
 
+> **Nomes atualizados na Etapa 13 (14/11/2026).** Este documento é histórico e pode citar nomes antigos (`dabi-preco-certo`, `precocerto.dabitech.com.br`, `dabi-orcamentos`, `dabi-orcamentos-producao`). Os nomes vigentes e a convenção estão em [`NOMES_E_AMBIENTES.md`](NOMES_E_AMBIENTES.md).
+
 > **Estado em 13/11/2026:** staging está publicado. A API Cloudflare confirmou deployment canônico `a9efb520-07e2-428e-ac77-54d196a0ea01`, `APP_ENV=staging` e `API` → `dabi-orcamentos-staging` em Production e Preview. O texto abaixo é o roteiro histórico da Etapa 6; estado atual e plano de produção: [ETAPA_7_PREPARACAO_PRODUCAO.md](ETAPA_7_PREPARACAO_PRODUCAO.md).
 
 > **O roteiro histórico abaixo não foi executado contra a Cloudflare, a Vercel ou o DNS.** A preparação atual ajusta somente o nome de exibição de `EMAIL_FROM` em `[env.staging.vars]`; não muda o endereço, segredos, banco, DNS nem `backups/`. O procedimento reproduzível e o estado atual estão nas seções de release ao fim deste documento.

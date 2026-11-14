@@ -6,7 +6,7 @@
 |---|---|---|---|
 | **local** | Desenvolvimento | D1 local em `worker/.wrangler/` | `npm run worker:dev` |
 | **staging** (homologação) | Testes integrados antes de produção | D1 `dabi-orcamentos-staging` (a criar) | `wrangler ... --env staging` |
-| **production** | Clientes reais | D1 `dabi-orcamentos-producao` (a criar) | `wrangler ... --env production` |
+| **production** | Clientes reais | D1 `dabi-custo-producao` (a criar; Worker `dabi-custo-api`) | `wrangler ... --env production` |
 
 Cada ambiente tem **banco, variáveis e segredos próprios**. `worker/wrangler.toml` já traz os blocos `[env.staging]` e `[env.production]` com marcadores no lugar dos IDs de banco (o deploy falha até serem trocados, de propósito). **Nada foi criado nem publicado.**
 
@@ -40,7 +40,7 @@ Em desenvolvimento, os segredos ficam em `worker/.dev.vars` (ignorado pelo git; 
 |---|---|---|
 | `local` | `dabi-orcamentos` | `--local` |
 | `staging` | `dabi-orcamentos-staging` | `--env staging --remote` |
-| `production` | `dabi-orcamentos-producao` | `--env production --remote` |
+| `production` | `dabi-custo-producao` | `--env production --remote` |
 | `restore` (só migrar/restaurar ensaio) | `dabi-orcamentos-restauracao` | `--env restore --remote` |
 
 `npm run licenses` e `npm run d1` exigem `--env` explícito, mostram ambiente/banco antes de agir e recusam combinações incoerentes. Um teste confere que esses nomes batem com `worker/wrangler.toml`.

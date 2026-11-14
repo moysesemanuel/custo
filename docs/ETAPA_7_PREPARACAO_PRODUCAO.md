@@ -1,5 +1,7 @@
 # Etapa 7 — staging, produção e domínio
 
+> **Nomes atualizados na Etapa 13 (14/11/2026).** Este documento é histórico e pode citar nomes antigos (`dabi-preco-certo`, `precocerto.dabitech.com.br`, `dabi-orcamentos`, `dabi-orcamentos-producao`). Os nomes vigentes e a convenção estão em [`NOMES_E_AMBIENTES.md`](NOMES_E_AMBIENTES.md).
+
 Estado consultado em 13/11/2026. Este documento prepara operações futuras; nenhuma infraestrutura de produção, DNS, secret ou backup foi alterado nesta etapa. Os oito testes manuais abaixo foram **relatados pelo proprietário em 13/11/2026**; a data exata de sua execução não foi informada.
 
 **Investigação posterior do pico de consumo e guarda do release:** [DIAGNOSTICO_CONSUMO_STAGING.md](DIAGNOSTICO_CONSUMO_STAGING.md). A análise separa o tráfego anterior à publicação do Pages das invocações reais das Functions.
