@@ -10,7 +10,11 @@ import { main as pagesMain, verifyTargetConfig } from '../scripts/pages.mjs';
 const TOML = readFileSync('worker/wrangler.toml', 'utf8');
 const REAL_ID = '11111111-2222-3333-4444-555555555555';
 /** Configuração de produção como ficará depois de criar o banco (o ID aqui é fictício, só para o teste). */
-const withProdId = (t = TOML, id = REAL_ID) => t.replace('database_id = "SUBSTITUIR-PELO-ID-DO-D1-DE-PRODUCAO"', `database_id = "${id}"`);
+/** ID REAL de produção registrado no wrangler.toml (banco criado em 14/11/2026). */
+const PROD_ID = parseWranglerToml(TOML).env.production.d1_databases[0].database_id as string;
+/** A mesma configuração com o banco de produção ainda não criado (marcador): prova que a publicação seria recusada. */
+const PLACEHOLDER = TOML.replace(`database_id = "${PROD_ID}"`, 'database_id = "SUBSTITUIR-PELO-ID-DO-D1-DE-PRODUCAO"');
+const withProdId = (t = TOML, id = REAL_ID) => t.replace(`database_id = "${PROD_ID}"`, `database_id = "${id}"`).replace('database_id = "SUBSTITUIR-PELO-ID-DO-D1-DE-PRODUCAO"', `database_id = "${id}"`);
 const stagingId = () => parseWranglerToml(TOML).env.staging.d1_databases[0].database_id as string;
 const section = (t: string, env: string) => t.split(`[env.${env}.vars]`)[1]?.split('\n[')[0] ?? '';
 const replaceIn = (t: string, env: string, from: RegExp, to: string) => { const s = section(t, env); return t.replace(s, s.replace(from, to)); };
@@ -47,11 +51,13 @@ describe('configuração dos ambientes (worker/wrangler.toml)', () => {
     expect(stagingId()).toMatch(/^6d6b478a-/); // o banco existente, não um novo
     expect(cfg.vars.ALLOWED_ORIGINS.split(',')).toEqual(expect.arrayContaining([STAGING_URL, LEGACY_STAGING_URL]));
   });
-  it('produção usa o domínio aprovado, APP_ENV, nomes novos e banco próprio; só o ID do banco (ainda não criado) bloqueia', () => {
+  it('produção usa o domínio aprovado, APP_ENV, nomes novos e banco próprio (criado); com o ID marcador a publicação seria recusada', () => {
     const cfg = parseWranglerToml(TOML).env.production;
     expect(cfg).toMatchObject({ name: 'dabi-custo-api', workers_dev: false, vars: { APP_ENV: 'production', PUBLIC_BASE_URL: PRODUCTION_URL, ALLOWED_ORIGINS: PRODUCTION_URL } });
-    expect(validateWorkerConfig(TOML, 'production')).toEqual(['[env.production] database_id ainda é um marcador: crie o banco "dabi-custo-producao" e informe o ID real.']);
-    expect(blockingProblems(validateWorkerConfig(TOML, 'production', { forPublish: false }))).toEqual([]); // dry-run: só aviso
+    expect(PROD_ID).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/); expect(PROD_ID).not.toBe(stagingId());
+    expect(validateWorkerConfig(TOML, 'production')).toEqual([]); // configuração real de produção: publicável
+    expect(validateWorkerConfig(PLACEHOLDER, 'production')).toEqual(['[env.production] database_id ainda é um marcador: crie o banco "dabi-custo-producao" e informe o ID real.']);
+    expect(blockingProblems(validateWorkerConfig(PLACEHOLDER, 'production', { forPublish: false }))).toEqual([]); // dry-run: só aviso
     expect(validateWorkerConfig(withProdId(), 'production')).toEqual([]);
   });
   it.each([
@@ -89,15 +95,16 @@ describe('Pages × Worker: cada projeto só publica contra o Worker do seu ambie
     expect(WORKER_ENVIRONMENTS.staging.d1).not.toBe(WORKER_ENVIRONMENTS.production.d1);
   });
   it('publicar o Pages de produção é recusado enquanto a configuração do Worker de produção estiver incompleta', () => {
-    expect(verifyTargetConfig('production', TOML).join()).toMatch(/marcador/);
+    expect(verifyTargetConfig('production', PLACEHOLDER).join()).toMatch(/marcador/);
+    expect(verifyTargetConfig('production', TOML)).toEqual([]);
     expect(verifyTargetConfig('production', withProdId())).toEqual([]);
-    expect(verifyTargetConfig('production', TOML, { forPublish: false }).join()).toMatch(/^\(aviso\)/); // dry-run segue, com aviso
+    expect(verifyTargetConfig('production', PLACEHOLDER, { forPublish: false }).join()).toMatch(/^\(aviso\)/); // dry-run segue, com aviso
     expect(verifyTargetConfig('staging', TOML)).toEqual([]); expect(verifyTargetConfig('staging-legacy', TOML)).toEqual([]);
   });
   it('o preflight do Worker junta configuração e revisão: sem SHA aprovado e checkout limpo, nada é publicado', () => {
     const r = preflight('production', { publish: true, approvedCommit: 'f'.repeat(40) }, { cwd: process.cwd(), toml: withProdId() });
     expect(r.problems.join()).toMatch(/commit aprovado|branch main|limpo/);
-    expect(preflight('production', { publish: false, approvedCommit: undefined }, { cwd: process.cwd(), toml: TOML })).toMatchObject({ problems: [], warnings: [expect.stringMatching(/marcador/)] });
+    expect(preflight('production', { publish: false, approvedCommit: undefined }, { cwd: process.cwd(), toml: PLACEHOLDER })).toMatchObject({ problems: [], warnings: [expect.stringMatching(/marcador/)] });
   });
 });
 
@@ -113,7 +120,7 @@ describe('script do Pages (executor simulado: nada é construído nem enviado)',
       const sha = git('rev-parse', 'HEAD');
       const deps = (toml: string) => ({ run: (cmd: string, args: string[]) => void calls.push([cmd, ...args]), toml, cwd: dir, validateDist: () => [] });
       const args = ['deploy', 'production', '--publish', '--approved-commit', sha, '--confirm-production', 'dabi-custo'];
-      expect(pagesMain(args, deps(TOML))).toBe(1); expect(calls).toEqual([]); // só a configuração (banco marcador) bloqueia aqui
+      expect(pagesMain(args, deps(PLACEHOLDER))).toBe(1); expect(calls).toEqual([]); // só a configuração (banco marcador) bloqueia aqui
       expect(pagesMain(args, deps(withProdId()))).toBe(0); // com a configuração completa, seguiria para build e publicação (simulados)
       expect(calls.map(c => c.slice(0, 3).join(' '))).toEqual(['npm run build', 'npx wrangler pages']);
       expect(calls[1]).toEqual(expect.arrayContaining(['--project-name', 'dabi-custo', '--branch', 'main', '--commit-hash', sha]));

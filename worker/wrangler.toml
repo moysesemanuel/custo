@@ -77,8 +77,8 @@ EMAIL_FROM = "Custô <acesso@mail.dabitech.com.br>"
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "dabi-custo-producao"
-# Marcador: a publicação é RECUSADA até ser trocado pelo ID real criado com `npx wrangler d1 create dabi-custo-producao`.
-database_id = "SUBSTITUIR-PELO-ID-DO-D1-DE-PRODUCAO"
+# Criado em 14/11/2026 (`npx wrangler d1 create dabi-custo-producao`). Banco EXCLUSIVO de produção: nunca recebe dados de staging.
+database_id = "ac505a67-a8f3-45da-b371-6c49ca357d49"
 migrations_dir = "migrations"
 
 # Banco SÓ para ensaiar restauração de backups (`npm run d1 -- restore-file --env restore --file backup.sql`). Nunca recebe dados reais por outro caminho.
