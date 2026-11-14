@@ -40,9 +40,9 @@ describe('Ambientes: argumentos EXATOS entregues ao Wrangler (licenças)', () =>
     expect(scopeOf(d.calls[0])).toEqual(['--config', 'worker/wrangler.toml', '--env', 'staging', '--remote']);
     expect(d.calls[0].join(' ')).not.toContain('producao');
   });
-  it('production: D1 dabi-orcamentos-producao, --env production e --remote', async () => {
+  it('production: D1 dabi-custo-producao, --env production e --remote', async () => {
     const { d } = await run(['status', LIC, '--env', 'production']);
-    expect(d.calls[0].slice(0, 4)).toEqual(['wrangler', 'd1', 'execute', 'dabi-orcamentos-producao']);
+    expect(d.calls[0].slice(0, 4)).toEqual(['wrangler', 'd1', 'execute', 'dabi-custo-producao']);
     expect(scopeOf(d.calls[0])).toEqual(['--config', 'worker/wrangler.toml', '--env', 'production', '--remote']);
   });
   it('a forma --env=staging e o sinônimo --local funcionam; todo comando de um ambiente usa SEMPRE o mesmo banco', async () => {
@@ -122,7 +122,7 @@ describe('Produção: confirmação adicional para operações destrutivas', () 
     const { code, d } = await run(['revoke', LIC, '--env', 'production', '--confirm-production', LIC], { isTTY: false });
     expect(code).toBe(0);
     expect(d.calls.length).toBe(2);
-    for (const c of d.calls) { expect(c[3]).toBe('dabi-orcamentos-producao'); expect(scopeOf(c)).toEqual(['--config', 'worker/wrangler.toml', '--env', 'production', '--remote']); }
+    for (const c of d.calls) { expect(c[3]).toBe('dabi-custo-producao'); expect(scopeOf(c)).toEqual(['--config', 'worker/wrangler.toml', '--env', 'production', '--remote']); }
   });
   it('confirmação de OUTRA licença não vale (não dá para reaproveitar um comando copiado)', async () => {
     const { code, d } = await run(['revoke', LIC, '--env', 'production', '--confirm-production', OTHER]);
@@ -173,29 +173,29 @@ describe('CLI do D1 (migrar, exportar, restaurar)', () => {
   it('export: somente leitura, sem confirmação, com o banco certo', async () => {
     const r = await go(['export', '--env', 'production', '--output', 'backup-2026-11-12.sql']);
     expect(r.code).toBe(0); expect(r.prompts).toHaveLength(0);
-    expect(r.calls[0]).toEqual(['wrangler', 'd1', 'export', 'dabi-orcamentos-producao', '--config', 'worker/wrangler.toml', '--env', 'production', '--remote', '--output', 'backup-2026-11-12.sql']);
+    expect(r.calls[0]).toEqual(['wrangler', 'd1', 'export', 'dabi-custo-producao', '--config', 'worker/wrangler.toml', '--env', 'production', '--remote', '--output', 'backup-2026-11-12.sql']);
   });
   it('migrate em produção exige confirmação com o NOME DO BANCO (digitada ou --confirm-production)', async () => {
     const no = await go(['migrate', '--env', 'production']);
-    expect(no.code).toBe(1); expect(no.calls).toHaveLength(0); expect(no.err.join('\n')).toContain('--confirm-production dabi-orcamentos-producao');
-    const yes = await go(['migrate', '--env', 'production', '--confirm-production', 'dabi-orcamentos-producao']);
-    expect(yes.code).toBe(0); expect(yes.calls[0][4]).toBe('dabi-orcamentos-producao'); expect(yes.calls[0]).toContain('production');
-    const typed = await go(['migrate', '--env', 'production'], { isTTY: true, answer: 'dabi-orcamentos-producao' });
+    expect(no.code).toBe(1); expect(no.calls).toHaveLength(0); expect(no.err.join('\n')).toContain('--confirm-production dabi-custo-producao');
+    const yes = await go(['migrate', '--env', 'production', '--confirm-production', 'dabi-custo-producao']);
+    expect(yes.code).toBe(0); expect(yes.calls[0][4]).toBe('dabi-custo-producao'); expect(yes.calls[0]).toContain('production');
+    const typed = await go(['migrate', '--env', 'production'], { isTTY: true, answer: 'dabi-custo-producao' });
     expect(typed.code).toBe(0);
   });
   it('restore-file: nunca em produção; vai para o banco de ensaio, homologação ou local', async () => {
     const prod = await go(['restore-file', '--env', 'production', '--file', 'b.sql']);
     expect(prod.code).toBe(1); expect(prod.calls).toHaveLength(0); expect(prod.err.join('\n')).toMatch(/não é permitido/);
     const r = await go(['restore-file', '--env', 'restore', '--file', 'backup.sql']);
-    expect(r.calls[0]).toEqual(['wrangler', 'd1', 'execute', 'dabi-orcamentos-restauracao', '--config', 'worker/wrangler.toml', '--env', 'restore', '--remote', '--file', 'backup.sql']);
+    expect(r.calls[0]).toEqual(['wrangler', 'd1', 'execute', 'dabi-custo-restauracao', '--config', 'worker/wrangler.toml', '--env', 'restore', '--remote', '--file', 'backup.sql']);
     expect((await go(['restore-file', '--env', 'staging', '--file', 'backup.sql'])).calls[0][3]).toBe('dabi-orcamentos-staging');
   });
   it('time-travel: info é leitura; restore em produção exige confirmação e leva --env e banco corretos', async () => {
-    expect((await go(['time-travel-info', '--env', 'production'])).calls[0]).toEqual(['wrangler', 'd1', 'time-travel', 'info', 'dabi-orcamentos-producao', '--config', 'worker/wrangler.toml', '--env', 'production']);
+    expect((await go(['time-travel-info', '--env', 'production'])).calls[0]).toEqual(['wrangler', 'd1', 'time-travel', 'info', 'dabi-custo-producao', '--config', 'worker/wrangler.toml', '--env', 'production']);
     const no = await go(['time-travel-restore', '--env', 'production', '--timestamp', '2026-11-12T15:00:00Z']);
     expect(no.code).toBe(1); expect(no.calls).toHaveLength(0);
-    const ok = await go(['time-travel-restore', '--env', 'production', '--timestamp', '2026-11-12T15:00:00Z', '--confirm-production', 'dabi-orcamentos-producao']);
-    expect(ok.calls[0]).toEqual(['wrangler', 'd1', 'time-travel', 'restore', 'dabi-orcamentos-producao', '--config', 'worker/wrangler.toml', '--env', 'production', '--timestamp', '2026-11-12T15:00:00Z']);
+    const ok = await go(['time-travel-restore', '--env', 'production', '--timestamp', '2026-11-12T15:00:00Z', '--confirm-production', 'dabi-custo-producao']);
+    expect(ok.calls[0]).toEqual(['wrangler', 'd1', 'time-travel', 'restore', 'dabi-custo-producao', '--config', 'worker/wrangler.toml', '--env', 'production', '--timestamp', '2026-11-12T15:00:00Z']);
     expect((await go(['time-travel-info', '--env', 'local'])).code).toBe(1); // time travel não existe no local
   });
   const bad: [string, string[]][] = [
@@ -235,21 +235,22 @@ describe('CLI do D1: verificação somente leitura (migrations-list e query)', (
 
 describe('Publicação do Worker: sempre com ambiente explícito', () => {
   const scripts = (JSON.parse(readFileSync('package.json', 'utf8')) as { scripts: Record<string, string> }).scripts;
-  it('o dry-run usa Wrangler explicitamente e o deploy passa pelo guardrail de SHA para staging', () => {
-    const deploys = Object.entries(scripts).filter(([, v]) => /wrangler\s+deploy/.test(v));
-    expect(deploys.map(([k]) => k)).toEqual(['worker:dry-run:staging']);
-    for (const [k, v] of deploys) { expect(v, k).toMatch(/--env staging/); expect(v, k).toContain('--config worker/wrangler.toml'); expect(v, k).not.toMatch(/production|producao/i); }
-    expect(scripts['worker:dry-run:staging']).toContain('--dry-run');
+  it('nenhum script chama `wrangler deploy` direto: dry-run e publicação passam pelo script protegido (validação + SHA)', () => {
+    expect(Object.entries(scripts).filter(([, v]) => /wrangler\s+deploy/.test(v)).map(([k]) => k)).toEqual([]);
+    expect(scripts['worker:dry-run:staging']).toBe('node scripts/worker.mjs deploy staging');
+    expect(scripts['worker:dry-run:production']).toBe('node scripts/worker.mjs deploy production');
     expect(scripts['worker:deploy:staging']).toBe('node scripts/worker.mjs deploy staging --publish');
+    expect(scripts['worker:deploy:production']).toBe('node scripts/worker.mjs deploy production --publish');
     const wrapper = readFileSync('scripts/worker.mjs', 'utf8');
-    expect(wrapper).toContain("'--env', 'staging', '--config', 'worker/wrangler.toml'");
+    expect(wrapper).toContain("'--env', env, '--config', 'worker/wrangler.toml'");
     expect(wrapper).toContain("'--tag', approvedCommit, '--strict'");
+    expect(wrapper).toContain('validateWorkerConfig');
   });
   it('a configuração de homologação não usa curingas nem a origem de produção e tem banco próprio', () => {
     const toml = readFileSync('worker/wrangler.toml', 'utf8');
     const staging = toml.slice(toml.indexOf('[env.staging]'), toml.indexOf('[env.production]'));
     expect(staging).toContain('name = "dabi-orcamentos-staging"'); expect(staging).toMatch(/EMAIL_ADAPTER = "resend"/); expect(staging).toMatch(/PUBLIC_BASE_URL = "https:\/\//);
-    expect(staging).not.toMatch(/ALLOWED_ORIGINS = "[^"]*\*/); expect(staging).not.toContain('database_name = "dabi-orcamentos-producao"');
+    expect(staging).not.toMatch(/ALLOWED_ORIGINS = "[^"]*\*/); expect(staging).not.toContain('database_name = "dabi-custo-producao"');
     const id = (block: string) => /database_id = "([^"]+)"/.exec(block)?.[1];
     const prod = toml.slice(toml.indexOf('[env.production]'));
     expect(id(staging)).not.toBe(id(prod));

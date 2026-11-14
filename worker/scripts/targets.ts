@@ -10,8 +10,8 @@ export const WRANGLER_CONFIG = 'worker/wrangler.toml';
 export const TARGETS: Record<EnvName, Target> = {
   local: { name: 'local', database: 'dabi-orcamentos', remote: false, label: 'LOCAL (arquivo de desenvolvimento, nada remoto)' },
   staging: { name: 'staging', database: 'dabi-orcamentos-staging', wranglerEnv: 'staging', remote: true, label: 'REMOTO — HOMOLOGAÇÃO (Cloudflare)' },
-  production: { name: 'production', database: 'dabi-orcamentos-producao', wranglerEnv: 'production', remote: true, label: 'REMOTO — PRODUÇÃO (Cloudflare, dados reais)' },
-  restore: { name: 'restore', database: 'dabi-orcamentos-restauracao', wranglerEnv: 'restore', remote: true, label: 'REMOTO — ENSAIO DE RESTAURAÇÃO (Cloudflare)' },
+  production: { name: 'production', database: 'dabi-custo-producao', wranglerEnv: 'production', remote: true, label: 'REMOTO — PRODUÇÃO (Cloudflare, dados reais)' },
+  restore: { name: 'restore', database: 'dabi-custo-restauracao', wranglerEnv: 'restore', remote: true, label: 'REMOTO — ENSAIO DE RESTAURAÇÃO (Cloudflare)' },
 };
 export const isEnvName = (v: string): v is EnvName => Object.prototype.hasOwnProperty.call(TARGETS, v);
 

@@ -130,7 +130,17 @@ describe('Proxy do Pages + Worker REAL: sessão, CSRF, cookies e links públicos
   it('um cliente não escapa da guarda mandando X-Dabi-Expect-Env do ambiente "certo"', async () => {
     setup('production', 'staging'); expect((await hit('/api/auth/session', { headers: { 'x-dabi-expect-env': 'production' } } as never)).status).toBe(421);
   });
-  it('sem a guarda configurada no Worker (APP_ENV ausente) o comportamento é o de sempre', async () => { setup('', 'staging'); (srv.env as { APP_ENV?: string }).APP_ENV = undefined; expect((await hit('/api/auth/session')).status).toBe(401); });
+  it('Worker sem APP_ENV: o Pages de staging continua funcionando (desenvolvimento local), mas o de PRODUÇÃO é recusado (421)', async () => {
+    setup('', 'staging'); (srv.env as { APP_ENV?: string }).APP_ENV = undefined; expect((await hit('/api/auth/session')).status).toBe(401);
+    setup('', 'production'); (srv.env as { APP_ENV?: string }).APP_ENV = undefined; await srv.issueFor('ana@exemplo.com');
+    expect((await hit('/api/auth/request-code', { method: 'POST', body: '{"email":"ana@exemplo.com"}' })).status).toBe(421);
+    expect((await hit('/api/auth/session')).status).toBe(421); expect(srv.mail.outbox).toHaveLength(0);
+  });
+  it('as quatro combinações Pages × Worker: só o par do MESMO ambiente passa', async () => {
+    for (const [worker, pages, ok] of [['staging', 'staging', true], ['production', 'production', true], ['production', 'staging', false], ['staging', 'production', false]] as const) {
+      setup(worker, pages); expect((await hit('/api/auth/session')).status, `${pages} → ${worker}`).toBe(ok ? 401 : 421);
+    }
+  });
 });
 
 describe('Navegação SPA e publicação (arquivos gerados)', () => {
@@ -157,15 +167,19 @@ describe('Ambientes separados (script de publicação)', () => {
     expect(parseArgs(['deploy']).ok).toBe(false); expect(parseArgs(['deploy', 'prod']).ok).toBe(false); expect(parseArgs(['publish', 'staging']).ok).toBe(false);
     expect(ENVIRONMENTS.staging.project).not.toBe(ENVIRONMENTS.production.project); expect(ENVIRONMENTS.staging.worker).not.toBe(ENVIRONMENTS.production.worker);
     expect(ENVIRONMENTS.staging.worker).toContain('staging'); expect(ENVIRONMENTS.production.worker).not.toContain('staging');
+    expect(ENVIRONMENTS['staging-legacy'].worker).toBe(ENVIRONMENTS.staging.worker); // convivência: os dois endereços de staging usam o MESMO Worker e D1
   });
   it('sem --publish nada é publicado; publicar em produção exige confirmação com o nome do projeto', () => {
     expect(parseArgs(['deploy', 'staging'])).toMatchObject({ ok: true, plan: { publish: false } });
     expect(parseArgs(['deploy', 'staging', '--publish']).ok).toBe(false);
     expect(parseArgs(['deploy', 'staging', '--publish', '--approved-commit', 'a'.repeat(40)]))
-      .toMatchObject({ ok: true, plan: { publish: true, approvedCommit: 'a'.repeat(40), config: { project: 'dabi-preco-certo-staging' } } });
-    expect(parseArgs(['deploy', 'production', '--publish']).ok).toBe(false); expect(parseArgs(['deploy', 'production', '--publish', '--confirm-production', 'dabi-preco-certo-staging']).ok).toBe(false);
-    expect(parseArgs(['deploy', 'production', '--publish', '--confirm-production', 'dabi-preco-certo']).ok).toBe(false);
-    expect(parseArgs(['deploy', 'production', '--publish', '--confirm-production', 'dabi-preco-certo', '--approved-commit', 'a'.repeat(40)])).toMatchObject({ ok: true, plan: { publish: true, approvedCommit: 'a'.repeat(40), config: { project: 'dabi-preco-certo' } } });
+      .toMatchObject({ ok: true, plan: { publish: true, approvedCommit: 'a'.repeat(40), config: { project: 'dabi-custo-staging', worker: 'dabi-orcamentos-staging', appEnv: 'staging' } } });
+    expect(parseArgs(['deploy', 'staging-legacy', '--publish', '--approved-commit', 'a'.repeat(40)]))
+      .toMatchObject({ ok: true, plan: { config: { project: 'dabi-preco-certo-staging', worker: 'dabi-orcamentos-staging', appEnv: 'staging' } } });
+    expect(parseArgs(['deploy', 'production', '--publish']).ok).toBe(false);
+    for (const wrong of ['dabi-custo-staging', 'dabi-preco-certo', 'dabi-custo-api']) expect(parseArgs(['deploy', 'production', '--publish', '--confirm-production', wrong, '--approved-commit', 'a'.repeat(40)]).ok, wrong).toBe(false);
+    expect(parseArgs(['deploy', 'production', '--publish', '--confirm-production', 'dabi-custo']).ok).toBe(false);
+    expect(parseArgs(['deploy', 'production', '--publish', '--confirm-production', 'dabi-custo', '--approved-commit', 'a'.repeat(40)])).toMatchObject({ ok: true, plan: { publish: true, approvedCommit: 'a'.repeat(40), config: { project: 'dabi-custo', worker: 'dabi-custo-api', appEnv: 'production', url: 'https://custo.dabitech.com.br' } } });
     expect(parseArgs(['deploy', 'staging', '--confirm-production', 'x']).ok).toBe(false); expect(parseArgs(['build', 'staging', '--publish']).ok).toBe(false);
   });
   it('staging também exige commit aprovado e checkout limpo; produção exige main', () => {
@@ -189,7 +203,7 @@ describe('Ambientes separados (script de publicação)', () => {
   it('anexa o SHA completo aprovado aos metadados do deployment Pages', () => {
     const sha = 'b'.repeat(40);
     expect(pagesDeployArgs(ENVIRONMENTS.staging, sha)).toEqual([
-      'pages', 'deploy', 'dist', '--project-name', 'dabi-preco-certo-staging', '--branch', 'staging',
+      'pages', 'deploy', 'dist', '--project-name', 'dabi-custo-staging', '--branch', 'staging',
       '--commit-hash', sha, '--commit-message', `Custô staging release ${sha}`,
     ]);
   });

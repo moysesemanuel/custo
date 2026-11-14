@@ -1,21 +1,23 @@
 // Build, validação e publicação do front-end no Cloudflare Pages, com ambiente SEMPRE explícito.
-//   node scripts/pages.mjs build|check|deploy staging|production [--publish] [--approved-commit SHA40] [--confirm-production dabi-preco-certo]
+//   node scripts/pages.mjs build|check|deploy staging|staging-legacy|production [--publish] [--approved-commit SHA40] [--confirm-production dabi-custo]
 // Sem --publish nada é enviado à Cloudflare (só build + validação). DNS, segredos, banco e migrações nunca são tocados aqui.
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { blockingProblems, PAGES_ENVIRONMENTS, readWranglerToml, validateWorkerConfig, WORKER_ENVIRONMENTS } from './environments.mjs';
 
-/** Cada ambiente tem o SEU projeto Pages e o SEU Worker (Service Binding `API`, configurado no projeto). Nunca compartilham nada. */
-export const ENVIRONMENTS = {
-  staging: { project: 'dabi-preco-certo-staging', branch: 'staging', worker: 'dabi-orcamentos-staging', url: 'https://dabi-preco-certo-staging.pages.dev' },
-  production: { project: 'dabi-preco-certo', branch: 'main', worker: 'dabi-orcamentos', url: 'https://precocerto.dabitech.com.br' },
-};
+/**
+ * Cada projeto Pages aponta para o Worker do SEU ambiente (Service Binding `API`, configurado no projeto). Nunca compartilham dados
+ * entre ambientes. `staging-legacy` é o projeto antigo, preservado durante a convivência de endereços.
+ */
+export const ENVIRONMENTS = Object.fromEntries(Object.entries(PAGES_ENVIRONMENTS).map(([name, p]) => [name, { ...p, worker: WORKER_ENVIRONMENTS[p.workerEnv].worker, appEnv: WORKER_ENVIRONMENTS[p.workerEnv].appEnv }]));
+const USAGE = 'Uso: node scripts/pages.mjs build|check|deploy staging|staging-legacy|production [--publish] [--approved-commit SHA40] [--confirm-production dabi-custo]';
 
 export function parseArgs(argv) {
   const [command, env, ...rest] = argv;
-  if (!['build', 'check', 'deploy'].includes(command ?? '')) return { ok: false, error: 'comando inválido (build, check ou deploy).' };
-  if (!Object.hasOwn(ENVIRONMENTS, env ?? '')) return { ok: false, error: 'informe o ambiente: staging ou production (sem padrão, de propósito).' };
+  if (!['build', 'check', 'deploy'].includes(command)) return { ok: false, error: 'comando inválido (build, check ou deploy).' };
+  if (!(env in ENVIRONMENTS)) return { ok: false, error: `ambiente inválido: informe ${Object.keys(ENVIRONMENTS).join(', ')} (não há padrão).` };
   let publish = false; let confirm; let approvedCommit;
   for (let i = 0; i < rest.length; i++) {
     if (rest[i] === '--publish') publish = true;
@@ -27,16 +29,27 @@ export function parseArgs(argv) {
   if (confirm !== undefined && env !== 'production') return { ok: false, error: '--confirm-production só se aplica a production.' };
   if (approvedCommit !== undefined && (!publish || command !== 'deploy')) return { ok: false, error: '--approved-commit só se aplica a uma publicação.' };
   if (publish && !/^[0-9a-f]{40}$/i.test(approvedCommit ?? '')) return { ok: false, error: `publicar em ${env} exige --approved-commit com o SHA completo de 40 caracteres.` };
-  if (publish && env === 'production' && confirm !== ENVIRONMENTS.production.project) return { ok: false, error: `publicar em PRODUÇÃO exige --confirm-production ${ENVIRONMENTS.production.project}.` };
+  if (publish && env === 'production' && confirm !== ENVIRONMENTS.production.confirm) return { ok: false, error: `publicar em PRODUÇÃO exige --confirm-production ${ENVIRONMENTS.production.confirm}.` };
   return { ok: true, plan: { command, env, publish, approvedCommit, config: ENVIRONMENTS[env] } };
 }
 
-/** Só permite publicar os artefatos do commit aprovado em um checkout limpo. */
+/**
+ * O Worker de destino precisa aceitar este front-end: configuração válida para o ambiente e a origem deste projeto liberada.
+ * (A configuração REMOTA do binding não é lida aqui; o worker/wrangler.toml local é a referência revisada.)
+ */
+export function verifyTargetConfig(env, tomlText = readWranglerToml(), { forPublish = true } = {}) {
+  const page = ENVIRONMENTS[env];
+  if (!page) return [`ambiente desconhecido: ${env}`];
+  const problems = validateWorkerConfig(tomlText, page.workerEnv, { forPublish });
+  return forPublish ? blockingProblems(problems) : problems;
+}
+
 export function verifyRelease(cwd, env, approvedCommit) {
   const git = (...args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
   try {
     const problems = [];
-    if (env === 'production' && git('branch', '--show-current') !== ENVIRONMENTS.production.branch) problems.push(`publicação de produção exige a branch ${ENVIRONMENTS.production.branch}.`);
+    const branch = ENVIRONMENTS[env]?.releaseBranch;
+    if (branch && git('branch', '--show-current') !== branch) problems.push(`publicação de ${env === 'production' ? 'produção' : env} exige a branch ${branch}.`);
     if (git('rev-parse', 'HEAD').toLowerCase() !== approvedCommit.toLowerCase()) problems.push('O commit do checkout não é o commit aprovado.');
     if (git('status', '--porcelain', '--untracked-files=all')) problems.push('O checkout precisa estar limpo antes da publicação.');
     return problems;
@@ -82,23 +95,28 @@ export function validateDist(dist = 'dist', root = '.') {
   return problems;
 }
 
-function run(cmd, args, env = {}) { execFileSync(cmd, args, { stdio: 'inherit', env: { ...process.env, ...env } }); }
+function runCommand(cmd, args, env = {}) { execFileSync(cmd, args, { stdio: 'inherit', env: { ...process.env, ...env } }); }
 
-function main(argv) {
+/** `deps` existe para teste: executor de comandos, conteúdo do wrangler.toml e diretório do Git (nada remoto nos testes). */
+export function main(argv, deps = {}) {
+  const run = deps.run ?? runCommand, cwd = deps.cwd ?? process.cwd(), tomlText = deps.toml ?? readWranglerToml(), validate = deps.validateDist ?? validateDist;
   const parsed = parseArgs(argv);
-  if (!parsed.ok) { console.error(`Erro: ${parsed.error}\nUso: node scripts/pages.mjs build|check|deploy staging|production [--publish] [--approved-commit SHA40] [--confirm-production dabi-preco-certo]`); return 1; }
+  if (!parsed.ok) { console.error(`Erro: ${parsed.error}\n${USAGE}`); return 1; }
   const { command, env, publish, approvedCommit, config } = parsed.plan;
+  const configProblems = verifyTargetConfig(env, tomlText, { forPublish: command === 'deploy' && publish });
+  for (const p of configProblems.filter(x => x.startsWith('(aviso)'))) console.error(p);
+  if (blockingProblems(configProblems).length) { console.error(`Configuração do Worker de ${config.workerEnv} INVÁLIDA para este front-end:\n${blockingProblems(configProblems).map(p => `  - ${p}`).join('\n')}`); return 1; }
   if (command === 'deploy' && publish) {
-    const problems = verifyRelease(process.cwd(), env, approvedCommit);
+    const problems = verifyRelease(cwd, env, approvedCommit);
     if (problems.length) { console.error(`Publicação de ${env} recusada:\n${problems.map(p => `  - ${p}`).join('\n')}`); return 1; }
   }
-  console.error(`\n=== pages ${command} ===\n  Ambiente:  ${env}\n  Projeto:   ${config.project}\n  Worker:    ${config.worker} (Service Binding API; configurado no projeto Pages)\n  Endereço:  ${config.url}\n  ${publish ? 'PUBLICA na Cloudflare' : 'Local: nada é enviado à Cloudflare'}\n`);
+  console.error(`\n=== pages ${command} ===\n  Ambiente:  ${env} (APP_ENV=${config.appEnv})\n  Projeto:   ${config.project}\n  Worker:    ${config.worker} (Service Binding API; configurado no projeto Pages)\n  Endereço:  ${config.url}\n  ${publish ? 'PUBLICA na Cloudflare' : 'Local: nada é enviado à Cloudflare'}\n`);
   if (command === 'build' || command === 'deploy') run('npm', ['run', 'build'], { VITE_API_URL: 'same-origin', VITE_REQUIRE_LOGIN: 'on' }); // anula qualquer .env local
-  const problems = validateDist();
+  const problems = validate();
   if (problems.length) { console.error(`Validação FALHOU:\n${problems.map(p => `  - ${p}`).join('\n')}`); return 1; }
   console.error('Validação ok (dist, _routes.json, _headers, Functions).');
   if (command === 'deploy' && publish) {
-    const afterBuild = verifyRelease(process.cwd(), env, approvedCommit);
+    const afterBuild = verifyRelease(cwd, env, approvedCommit);
     if (afterBuild.length) { console.error(`Publicação de ${env} recusada após o build:\n${afterBuild.map(p => `  - ${p}`).join('\n')}`); return 1; }
     run('npx', ['wrangler', ...pagesDeployArgs(config, approvedCommit, env)]);
   } else if (command === 'deploy') console.error('Nada foi publicado. Para publicar, repita com --publish.');

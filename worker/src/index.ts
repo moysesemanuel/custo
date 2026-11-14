@@ -12,7 +12,7 @@ import { countQuotaUsage, generateId, getQuote, ID_PATTERN, insertQuoteWithinQuo
 
 export interface Env {
   DB: D1Like;
-  /** Origem pública dos links, ex.: https://orcamento.dabitech.com.br (sem barra final). */
+  /** Origem pública dos links, ex.: https://custo.dabitech.com.br (sem barra final). */
   PUBLIC_BASE_URL?: string;
   /** Origens do app autorizadas a chamar a API (CORS), separadas por vírgula. Vazio = nenhuma. */
   ALLOWED_ORIGINS?: string;
@@ -22,7 +22,7 @@ export interface Env {
   EMAIL_ADAPTER?: string;
   /** SEGREDO (wrangler secret) do provedor Resend. Nunca em arquivos versionados. */
   RESEND_API_KEY?: string;
-  /** Remetente verificado no Resend, ex.: `PedidoCerto <acesso@seudominio.com.br>`. Não é segredo. */
+  /** Remetente verificado no Resend, ex.: `Custô <acesso@mail.dabitech.com.br>`. Não é segredo. */
   EMAIL_FROM?: string;
   /** Limite diário de e-mails de código de acesso (padrão 80, abaixo dos 100/dia do plano gratuito do Resend). Ajuste ao mudar de plano. */
   EMAIL_DAILY_LIMIT?: string;
@@ -206,7 +206,9 @@ export function createHandler(options: Options) {
   return async function handle(request: Request, env: Env): Promise<Response> {
     const { pathname } = new URL(request.url);
     const expected = request.headers.get('x-dabi-expect-env');
-    if (env.APP_ENV && expected && expected !== env.APP_ENV) return apiError(421, 'ENVIRONMENT_MISMATCH', 'Este front-end pertence a outro ambiente.');
+    // Front-end de outro ambiente: recusado. Um front-end de PRODUÇÃO exige um Worker que se declare produção (fecha a falha de um
+    // Worker sem APP_ENV aceitar o Pages de produção). Sem cabeçalho (chamada direta, desenvolvimento local) nada muda.
+    if (expected && (env.APP_ENV ? expected !== env.APP_ENV : expected === 'production')) return apiError(421, 'ENVIRONMENT_MISMATCH', 'Este front-end pertence a outro ambiente.');
     if (request.method.toUpperCase() === 'OPTIONS' && pathname.startsWith('/api/')) {
       const preflight = new Response(null, { status: 204, headers: { ...SECURITY_HEADERS, 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE', 'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-CSRF-Token', 'Access-Control-Max-Age': '600' } });
       return withCors(request, env, preflight);
