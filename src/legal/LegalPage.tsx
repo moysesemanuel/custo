@@ -17,7 +17,7 @@ function Privacy() {
   return <>
     <h1>Política de privacidade</h1>
     <h2>1. Quem trata os dados</h2>
-    <p>O Custô é um serviço da DaBi Tech. Controlador: <Pending>razão social e CNPJ</Pending>. Endereço: <Pending>endereço</Pending>. Canal de privacidade e encarregado (art. 41 da LGPD): <Pending>nome e e-mail de contato</Pending>.</p>
+    <p>O Custô é um serviço da DaBi Tech. Controlador: 57.936.721 Moyses Emanuel Costa Silva, CNPJ 57.936.721/0001-25. Endereço: <Pending>endereço</Pending>. Canal de privacidade (art. 41 da LGPD): <a href="mailto:contato@dabitech.com.br">contato@dabitech.com.br</a>.</p>
     <h2>2. Quais dados o Custô guarda</h2>
     <ul>
       <li><strong>Conta:</strong> seu e-mail, a data de criação e de confirmação, e as sessões abertas (nome do dispositivo informado no login, datas de criação, último uso e expiração).</li>
@@ -36,7 +36,7 @@ function Privacy() {
     <h2>6. Por quanto tempo</h2>
     <p>Mantemos os dados enquanto a conta existir. Após a exclusão, os dados são apagados conforme o procedimento de exclusão. Cópias de segurança são substituídas pelo ciclo de retenção dos backups. Prazos específicos: <Pending>prazos definitivos de retenção (proposta técnica em revisão)</Pending>.</p>
     <h2>7. Seus direitos</h2>
-    <p>Você pode pedir confirmação, acesso, correção, portabilidade e exclusão dos seus dados, e informações sobre o compartilhamento. Seus dados de trabalho podem ser exportados a qualquer momento em <strong>Backup</strong>, dentro do aplicativo. Pedidos pelo canal: <Pending>e-mail do canal de privacidade</Pending>, com resposta em <Pending>prazo de atendimento</Pending>.</p>
+    <p>Você pode pedir confirmação, acesso, correção, portabilidade e exclusão dos seus dados, e informações sobre o compartilhamento. Seus dados de trabalho podem ser exportados a qualquer momento em <strong>Backup</strong>, dentro do aplicativo. Pedidos pelo canal <a href="mailto:contato@dabitech.com.br">contato@dabitech.com.br</a>, com resposta em <Pending>prazo de atendimento</Pending>.</p>
     <h2>8. Segurança</h2>
     <p>Conexões cifradas (HTTPS), cookies de sessão protegidos (HttpOnly, Secure), proteção contra requisições forjadas, códigos e tokens guardados só como hash, isolamento entre contas e limites contra tentativas repetidas. Em caso de incidente relevante, comunicaremos os titulares afetados e a ANPD conforme a lei.</p>
     <h2>9. Alterações</h2>
@@ -48,7 +48,7 @@ function Terms() {
   return <>
     <h1>Termos de uso</h1>
     <h2>1. O serviço</h2>
-    <p>O Custô ajuda pequenos produtores de alimentos a calcular custos e preços, organizar encomendas e recebimentos e enviar orçamentos. Fornecedor: <Pending>razão social e CNPJ da DaBi Tech</Pending>.</p>
+    <p>O Custô ajuda pequenos produtores de alimentos a calcular custos e preços, organizar encomendas e recebimentos e enviar orçamentos. Fornecedor: 57.936.721 Moyses Emanuel Costa Silva, CNPJ 57.936.721/0001-25.</p>
     <h2>2. Acesso</h2>
     <p>O acesso é pessoal, por código enviado ao e-mail cadastrado, e depende de uma licença ativa. Cada conta pode ter até duas sessões abertas ao mesmo tempo. Você é responsável por manter seu e-mail seguro.</p>
     <h2>3. Seus dados e responsabilidades</h2>
@@ -60,7 +60,7 @@ function Terms() {
     <h2>6. Disponibilidade e cópias de segurança</h2>
     <p>Trabalhamos para manter o serviço disponível e fazemos cópias de segurança, mas não há garantia de funcionamento ininterrupto. Recomendamos exportar seus dados em <strong>Backup</strong> regularmente.</p>
     <h2>7. Condições do beta fechado</h2>
-    <p>Durante o beta, o Custô está em evolução: funcionalidades podem mudar e falhas podem acontecer. Condições comerciais do beta (preço, duração e o que acontece ao final): <Pending>condições comerciais do beta</Pending>. Canal de suporte: <Pending>canal e horário de suporte</Pending>.</p>
+    <p>Durante o beta, o Custô está em evolução: funcionalidades podem mudar e falhas podem acontecer. Condições comerciais do beta (preço, duração e o que acontece ao final): <Pending>condições comerciais do beta</Pending>. Canal de suporte: <a href="mailto:contato@dabitech.com.br">contato@dabitech.com.br</a> (horário de atendimento: <Pending>horário de suporte</Pending>).</p>
     <h2>8. Encerramento</h2>
     <p>Você pode pedir o encerramento da conta e a exclusão dos dados a qualquer momento (veja a Política de privacidade). <Pending>regras de cancelamento e aviso prévio</Pending>.</p>
     <h2>9. Lei e foro</h2>

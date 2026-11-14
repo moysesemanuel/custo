@@ -4,13 +4,13 @@
 
 ## Informações pendentes (precisam ser fornecidas antes do beta)
 
-1. Razão social, CNPJ e endereço do controlador (DaBi Tech).
-2. Encarregado ou canal de privacidade (art. 41): nome e e-mail.
+1. ~~Razão social e CNPJ~~ — fornecidos em 2026-11-14: 57.936.721 Moyses Emanuel Costa Silva, CNPJ 57.936.721/0001-25. **Endereço continua pendente.**
+2. ~~Canal de privacidade (art. 41)~~ — contato@dabitech.com.br (também é o canal de suporte). Nome do encarregado não informado; a revisão jurídica decide se é exigido.
 3. Base legal de cada tratamento (proposta técnica: execução de contrato, art. 7º, V, para conta e dados de trabalho; legítimo interesse ou segurança para limites anti-abuso e auditoria).
 4. Papéis em relação aos **dados dos clientes finais** que o confeiteiro registra (o Custô como operador?) e as responsabilidades.
 5. Transferência internacional: Cloudflare e Resend podem processar fora do Brasil (arts. 33 a 36).
 6. Prazos de retenção definitivos (proposta em `EXCLUSAO_DE_CONTA.md`) e prazo de resposta aos titulares.
-7. Condições comerciais do beta (preço, duração, o que acontece ao fim), canal e horário de suporte, cancelamento, foro.
+7. Condições comerciais do beta (preço, duração, o que acontece ao fim), horário de suporte (canal: contato@dabitech.com.br), cancelamento, foro.
 8. Data de vigência dos documentos.
 
 ## Dados tratados (inventário verificado no esquema)
@@ -44,5 +44,5 @@ Fornecedores: Cloudflare (Pages, Workers, D1) e Resend (e-mail). Não há analyt
 
 ## Canal de suporte e incidentes
 
-- **Antes do beta:** definir um canal (e-mail ou WhatsApp) e quem responde. O canal de privacidade pode ser o mesmo.
+- **Canal:** contato@dabitech.com.br (suporte e privacidade). Falta definir horário e prazo de resposta.
 - **Incidente com dados:** seguir `MONITORAMENTO.md` §5 (conter, preservar evidências, avaliar o risco, comunicar).

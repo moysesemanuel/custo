@@ -7,14 +7,15 @@ import { isLegalPath, LegalPage } from '../../src/legal/LegalPage';
 afterEach(() => { document.body.innerHTML = ''; window.history.replaceState({}, '', '/'); vi.resetModules(); vi.unstubAllGlobals(); });
 
 describe('páginas jurídicas', () => {
-  it.each([['/privacidade', 'Política de privacidade'], ['/termos', 'Termos de uso']] as const)('%s é minuta marcada, com pendências visíveis e sem dados inventados', (path, title) => {
+  it.each([['/privacidade', 'Política de privacidade'], ['/termos', 'Termos de uso']] as const)('%s é minuta marcada, com os dados fornecidos pelo proprietário e pendências visíveis', (path, title) => {
     render(<LegalPage path={path} />);
     expect(screen.getByRole('heading', { level: 1, name: title })).toBeTruthy();
     expect(screen.getByRole('note').textContent).toMatch(/Minuta em revisão/);
     const text = document.body.textContent ?? '';
-    expect(text).toMatch(/\[PENDENTE: razão social e CNPJ/);
-    expect(text).not.toMatch(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/); // nenhum CNPJ
-    expect(text).not.toMatch(/@[a-z0-9-]+\.[a-z]/i); // nenhum e-mail de contato inventado
+    expect(text).toContain('57.936.721 Moyses Emanuel Costa Silva, CNPJ 57.936.721/0001-25');
+    expect(text.match(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/g)).toEqual(['57.936.721/0001-25']); // só o CNPJ informado
+    expect(new Set(text.match(/[a-z0-9.-]+@[a-z0-9-]+(?:\.[a-z]+)+/gi))).toEqual(new Set(['contato@dabitech.com.br'])); // só o e-mail informado
+    expect(text).toMatch(/\[PENDENTE: /); // o que não foi fornecido continua marcado
   });
   it('a política descreve os dados realmente guardados e os fornecedores reais', () => {
     render(<LegalPage path="/privacidade" />);
