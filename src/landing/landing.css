@@ -81,7 +81,7 @@
 /* Depoimento e benefícios */
 .lp-proof{margin-top:24px;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:32px;align-items:center;background:#F1EEE9;border:1px solid var(--lp-line);border-radius:36px;padding:24px 34px 24px 28px}
 .lp-quote{margin:0;display:flex;gap:28px;align-items:center;padding-right:32px;border-right:1px solid #CFC8BD}
-.lp-avatar{flex-shrink:0;width:200px;aspect-ratio:3/2;border-radius:20px;display:grid;place-items:center;background:linear-gradient(135deg,var(--lp-green),#0B6B64);color:#fff;font-family:'Manrope Variable',Manrope,sans-serif;font-weight:800;font-size:54px;letter-spacing:-.04em}
+.lp-avatar{flex-shrink:0;width:230px;height:auto;aspect-ratio:3/2;object-fit:cover;border-radius:20px;display:block}
 .lp-quote-mark{display:block;font-family:Georgia,serif;font-size:64px;line-height:.6;color:var(--lp-orange);font-weight:700;height:28px}
 .lp-quote blockquote{margin:0;font-style:italic;font-size:15px;line-height:1.55}
 .lp-quote blockquote::before{content:"“"}.lp-quote blockquote::after{content:"”"}
@@ -130,7 +130,7 @@
   .lp-feature-grid{grid-template-columns:1fr}
   .lp-showcase-grid{padding:0 16px;gap:32px}
   .lp-proof{padding:22px 18px;border-radius:24px}
-  .lp-quote{flex-direction:column;align-items:flex-start;gap:18px}.lp-avatar{width:120px;font-size:40px}
+  .lp-quote{flex-direction:column;align-items:flex-start;gap:18px}.lp-avatar{width:100%;max-width:320px}
   .lp-benefits{grid-template-columns:1fr;gap:20px}
   .lp-final{border-radius:24px 24px 0 0;padding-bottom:70px}
   .lp-footer nav{flex-wrap:wrap}

@@ -34,18 +34,19 @@ describe('página de vendas', () => {
     expect(text).not.toMatch(/90 dias|\+\d+\s*%|receba online|pagamentos online/i);
     expect(text).toContain('CNPJ 57.936.721/0001-25');
   });
-  it('depoimento com a atribuição fornecida pelo proprietário, sem foto de outra pessoa', () => {
+  it('depoimento com a atribuição e a foto fornecidas pelo proprietário', () => {
     render(<Landing />);
     const fig = document.querySelector('figure')!;
     expect(fig.querySelector('blockquote')!.textContent).toBe(TESTIMONIAL.quote);
     expect(fig.textContent).toContain('Lana Costa');
     expect(fig.textContent).toContain('Confeiteira e proprietária da Lana Costa Doces');
-    expect(fig.querySelector('img')).toBeNull();
+    expect(fig.querySelector('img')!.getAttribute('src')).toBe('/landing/lana-costa.webp');
+    expect(fig.querySelector('img')!.getAttribute('alt')).toMatch(/Lana Costa/);
   });
   it('só a foto do topo tem prioridade alta; as demais carregam sob demanda e a tela do app tem texto alternativo', () => {
     render(<Landing />);
     const imgs = [...document.querySelectorAll('img')].filter(i => i.src.includes('/landing/'));
-    expect(imgs.map(i => i.getAttribute('fetchpriority'))).toEqual(['high', null, null]);
+    expect(imgs.map(i => i.getAttribute('fetchpriority'))).toEqual(['high', null, null, null]);
     expect(imgs.slice(1).every(i => i.getAttribute('loading') === 'lazy')).toBe(true);
     expect(imgs.find(i => i.src.includes('app-dashboard'))!.getAttribute('alt')!.length).toBeGreaterThan(20);
   });

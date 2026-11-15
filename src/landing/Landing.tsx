@@ -101,7 +101,7 @@ export function Landing() {
       <section className="lp-wrap" id="clientes" aria-label="Depoimento">
         <div className="lp-proof">
           <figure className="lp-quote">
-            <div className="lp-avatar" aria-hidden="true">LC</div>
+            <img className="lp-avatar" src="/landing/lana-costa.webp" alt="Lana Costa, confeiteira" width={600} height={400} loading="lazy" />
             <div>
               <span className="lp-quote-mark" aria-hidden="true">“</span>
               <blockquote>{TESTIMONIAL.quote}</blockquote>
