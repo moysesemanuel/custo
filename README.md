@@ -39,6 +39,7 @@ npm test
 - [`docs/MIGRACAO_STAGING_CUSTO.md`](docs/MIGRACAO_STAGING_CUSTO.md): Plano A, staging em `dabi-custo-staging.pages.dev` mantendo o Worker e o D1.
 - [`docs/IMPLANTACAO_PRODUCAO.md`](docs/IMPLANTACAO_PRODUCAO.md): Plano B, produção em `custo.dabitech.com.br`, e correção para a frente.
 - [`docs/PRIVACIDADE_E_TERMOS.md`](docs/PRIVACIDADE_E_TERMOS.md) e [`docs/EXCLUSAO_DE_CONTA.md`](docs/EXCLUSAO_DE_CONTA.md): minutas (páginas `/privacidade` e `/termos`), pendências jurídicas, exclusão de conta e retenção.
+- Página de vendas (`src/landing/`): aparece em `/` para quem nunca entrou neste navegador (sem `pedidocerto.lastAccess`); quem já usa vai direto ao app, e `/entrar` sempre abre o acesso. Imagens em `public/landing/` (telas reais do app com dados fictícios). Os botões "Testar grátis" abrem um e-mail para contato@dabitech.com.br; o acesso é liberado pelo `/admin`.
 - [`docs/MONITORAMENTO.md`](docs/MONITORAMENTO.md): runbook do beta (limiares, laço de gravações, login, indisponibilidade, incidentes).
 - [`docs/DIAGNOSTICO_SYNC_ETAPA_11.md`](docs/DIAGNOSTICO_SYNC_ETAPA_11.md): causa e correção da "Falha ao sincronizar" no staging (lista vazia de embalagens × campo omitido pelo servidor), proteção contra reenvio em laço e diagnóstico opcional da sincronização.
 - [`docs/ETAPA_11_PEDIDOS_MULTIPLOS.md`](docs/ETAPA_11_PEDIDOS_MULTIPLOS.md): encomendas com várias receitas, confirmação automática por pagamento, orçamento público sem discriminar embalagens, migração 0012 e protocolo de sincronização v2.
