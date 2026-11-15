@@ -4,7 +4,7 @@
   background:var(--lp-bg);color:var(--lp-ink);font-family:'Inter Variable',Inter,system-ui,sans-serif;line-height:1.5;overflow-x:clip}
 .lp h1,.lp h2,.lp h3{font-family:'Manrope Variable',Manrope,Inter,sans-serif;letter-spacing:-.03em;margin:0}
 .lp a{color:inherit}
-.lp-wrap{max-width:1320px;margin:0 auto;padding:0 24px;box-sizing:border-box}
+.lp-wrap{max-width:1600px;margin:0 auto;padding:0 clamp(16px,3vw,48px);box-sizing:border-box}
 .lp-skip{position:absolute;left:-9999px;top:8px;z-index:30;background:#fff;padding:10px 14px;border-radius:8px;font-weight:700}.lp-skip:focus{left:8px}
 .lp a:focus-visible{outline:3px solid var(--lp-orange);outline-offset:3px;border-radius:8px}
 
