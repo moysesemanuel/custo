@@ -1,6 +1,6 @@
 /**
  * Página de vendas (/ para quem ainda não usa o app), no layout da referência aprovada pelo proprietário.
- * Promete só o que o Custô faz e as condições publicadas nos termos (beta gratuito por 90 dias, sem cobrança automática,
+ * Promete só o que o Custô faz e as condições publicadas nos termos (beta gratuito por 14 dias, sem cobrança automática,
  * cancelamento a qualquer momento). A tela do notebook é captura real do app com dados FICTÍCIOS.
  * O depoimento foi fornecido pelo proprietário (TESTIMONIAL abaixo).
  */
@@ -9,7 +9,7 @@ import './landing.css';
 
 const CONTACT = 'contato@dabitech.com.br';
 export const BETA_MAILTO = `mailto:${CONTACT}?subject=${encodeURIComponent('Quero testar o Custô grátis')}&body=${encodeURIComponent('Olá! Quero participar do beta gratuito do Custô.\n\nMeu nome:\nNome do meu negócio:\nO que eu produzo:\nCidade:\n')}`;
-export const TRIAL_DAYS = 90;
+export const TRIAL_DAYS = 14;
 
 export const TESTIMONIAL = {
   quote: 'O Custô mudou a forma como eu precifico meus produtos. Hoje eu tenho clareza do meu custo, sei exatamente o meu lucro e consigo planejar o crescimento da minha confeitaria com muito mais segurança.',
@@ -33,7 +33,7 @@ export function Landing() {
     <a className="lp-skip" href="#conteudo">Pular para o conteúdo</a>
     <header className="lp-header">
       <div className="lp-wrap lp-header-row">
-        <a href="/" aria-label="Custô — início"><img src="/brand/custo-black.svg" alt="Custô" className="lp-logo" width={140} height={50} /></a>
+        <a href="/" aria-label="Custô — início"><img src="/brand/custo-green.svg" alt="Custô" className="lp-logo" width={140} height={50} /></a>
         <nav className="lp-nav" aria-label="Seções"><a href="#solucoes">Soluções</a><a href="#numeros">Como funciona</a><a href="#clientes">Clientes</a><a href="#comecar">Planos</a></nav>
         <div className="lp-header-cta"><a className="lp-link" href="/entrar">Entrar</a><a className="lp-btn lp-btn-sm" href={BETA_MAILTO}>Testar grátis</a></div>
       </div>
@@ -43,7 +43,7 @@ export function Landing() {
       <section className="lp-hero">
         <img className="lp-hero-photo" src="/landing/hero-confeiteira.webp" alt="Confeiteira sorridente com avental do Custô ao lado de um bolo decorado" width={1280} height={924} fetchPriority="high" />
         <div className="lp-wrap lp-hero-copy">
-          <img src="/brand/custo-white.svg" alt="" aria-hidden="true" className="lp-hero-logo" width={230} height={82} />
+          <img src="/brand/custo-color.svg" alt="" aria-hidden="true" className="lp-hero-logo" width={230} height={82} />
           <h1>Seu custo na ponta do lápis. <span>Seu lucro na mão.</span></h1>
           <p className="lp-lead">O sistema completo para confeiteiras, cake designers e pequenos negócios de alimentos que querem precificar com segurança, organizar a produção, controlar pedidos e acompanhar recebimentos.</p>
           <div className="lp-cta-row">

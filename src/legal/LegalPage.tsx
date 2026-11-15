@@ -68,7 +68,7 @@ function Terms() {
     <h2>7. Condições do beta fechado</h2>
     <p>O Custô está disponível inicialmente em modalidade de <strong>beta fechado e gratuito</strong>, destinada a um grupo limitado de usuários convidados para testar suas funcionalidades e contribuir com a evolução da plataforma.</p>
     <h3>7.1. Duração e gratuidade</h3>
-    <p>O período de participação no beta será de 90 (noventa) dias, contados a partir da ativação da conta, sem cobrança de mensalidades ou taxas de adesão.</p>
+    <p>O período de participação no beta será de 14 (quatorze) dias, contados a partir da ativação da conta, sem cobrança de mensalidades ou taxas de adesão.</p>
     <h3>7.2. Funcionalidades e disponibilidade</h3>
     <p>Durante o beta, os participantes poderão utilizar as funcionalidades disponibilizadas no Custô, incluindo precificação de receitas, gerenciamento de ingredientes, embalagens, encomendas, recebimentos e orçamentos.</p>
     <p>Por se tratar de uma versão em avaliação, funcionalidades poderão ser modificadas, aprimoradas ou descontinuadas. Poderão ocorrer falhas, interrupções temporárias e períodos de manutenção, que serão tratados conforme a disponibilidade operacional do serviço.</p>

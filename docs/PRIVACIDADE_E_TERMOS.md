@@ -10,7 +10,7 @@ Fornecido pelo proprietário em 2026-11-14 e publicado (texto literal, sem acré
 - Canal de privacidade e suporte: contato@dabitech.com.br (seg–qui 9h–18h, sex 9h–16h, Brasília).
 - Bases legais e papéis (Custô controlador dos dados das contas; operador dos dados de clientes finais) — política, seção 4.
 - Transferência internacional (Cloudflare, Resend) — política, seção 5.
-- Condições do beta fechado (90 dias gratuitos, sem cobrança automática) — termos, seção 7.
+- Condições do beta fechado (14 dias gratuitos, sem cobrança automática; alterado de 90 para 14 em 2026-11-14, antes de qualquer cliente) — termos, seção 7.
 - Cancelamento e encerramento (aviso de 30 dias) e foro (Comarca de Curitiba/PR, ressalvados os direitos do consumidor) — termos, seções 8 e 9.
 
 - Retenção: base ativa até a exclusão; até 7 dias no Time Travel do D1; até 90 dias nos backups agendados (`BACKUP_E_RECUPERACAO.md`); auditoria administrativa 365 dias.

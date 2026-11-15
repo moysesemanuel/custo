@@ -26,12 +26,12 @@ describe('página de vendas', () => {
     expect(BETA_MAILTO).toMatch(/^mailto:contato@dabitech\.com\.br\?subject=/);
     expect(screen.getByRole('link', { name: 'Entrar' }).getAttribute('href')).toBe('/entrar');
   });
-  it('condições iguais às dos termos (90 dias, sem cartão, cancelamento) e nenhum número de resultado inventado', () => {
+  it('condições iguais às dos termos (14 dias, sem cartão, cancelamento) e nenhum número de resultado inventado', () => {
     render(<Landing />);
     const text = document.body.textContent ?? '';
-    expect(TRIAL_DAYS).toBe(90);
-    for (const s of ['Teste grátispor 90 dias', 'Sem cartãode crédito', 'Cancelamentosem burocracia', 'grátis por 90 dias, sem cartão de crédito']) expect(text, s).toContain(s);
-    expect(text).not.toMatch(/14 dias|\+\d+\s*%|receba online|pagamentos online/i);
+    expect(TRIAL_DAYS).toBe(14);
+    for (const s of ['Teste grátispor 14 dias', 'Sem cartãode crédito', 'Cancelamentosem burocracia', 'grátis por 14 dias, sem cartão de crédito']) expect(text, s).toContain(s);
+    expect(text).not.toMatch(/90 dias|\+\d+\s*%|receba online|pagamentos online/i);
     expect(text).toContain('CNPJ 57.936.721/0001-25');
   });
   it('depoimento com a atribuição fornecida pelo proprietário, sem foto de outra pessoa', () => {
