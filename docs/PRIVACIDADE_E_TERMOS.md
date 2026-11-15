@@ -1,6 +1,6 @@
 # Privacidade, termos e operação (LGPD): minutas e pendências
 
-> **Minutas pendentes de revisão jurídica.** Nada aqui é parecer jurídico nem garante conformidade. As páginas `/privacidade` e `/termos` (`src/legal/LegalPage.tsx`) descrevem o que o sistema faz hoje e deixam **visíveis** as informações que faltam, marcadas `[PENDENTE: …]`.
+> As páginas `/privacidade` e `/termos` (`src/legal/LegalPage.tsx`) estão publicadas como versão vigente (desde 14/11/2026), com os textos jurídicos fornecidos pelo proprietário. Nada aqui é parecer jurídico.
 
 ## Informações fornecidas e pendentes
 
@@ -13,12 +13,11 @@ Fornecido pelo proprietário em 2026-11-14 e publicado (texto literal, sem acré
 - Condições do beta fechado (90 dias gratuitos, sem cobrança automática) — termos, seção 7.
 - Cancelamento e encerramento (aviso de 30 dias) e foro (Comarca de Curitiba/PR, ressalvados os direitos do consumidor) — termos, seções 8 e 9.
 
-**Ainda pendentes** (marcados `[PENDENTE]` na política):
+- Retenção: base ativa até a exclusão; até 7 dias no Time Travel do D1; até 90 dias nos backups agendados (`BACKUP_E_RECUPERACAO.md`); auditoria administrativa 365 dias.
+- Resposta aos titulares: sem prazo fixo, "observados os prazos previstos na legislação" (atenção: a LGPD, art. 19, II, prevê 15 dias para a declaração completa quando pedida).
+- Vigência: 14 de novembro de 2026. O aviso de minuta foi removido por decisão do proprietário.
 
-1. Prazos de retenção definitivos (proposta em `EXCLUSAO_DE_CONTA.md`).
-2. Prazo de resposta aos pedidos dos titulares.
-3. Data de vigência dos documentos.
-4. Revisão jurídica para retirar o aviso "Minuta em revisão". O endereço publicado não tem número; confirmar se é suficiente.
+Não há pendências marcadas nas páginas.
 
 ## Dados tratados (inventário verificado no esquema)
 

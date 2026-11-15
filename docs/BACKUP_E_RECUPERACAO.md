@@ -35,13 +35,21 @@ O arquivo contém e-mails, nomes de clientes finais e dados financeiros. **Cifre
 
 Guarde o `.manifest.json` junto (não é sigiloso). Apague a cópia em texto depois de conferir a cifrada.
 
-**Rotina proposta** (responsável: o proprietário do Custô):
+### Agendamento (desde 2026-11-14)
+
+- `launchd` do Mac do proprietário: `~/Library/LaunchAgents/br.com.dabitech.custo.backup.plist`, toda segunda às 10h (se o Mac estiver dormindo, roda ao acordar).
+- Script: `scripts/backup-scheduled.sh` → `~/custo-backups/custo-production-weekly-<UTC>.sql` + manifesto; falha se a restauração em memória falhar.
+- Descarta só os arquivos **desse agendamento** com mais de 90 dias; backups manuais nunca são apagados.
+- Log: `~/custo-backups/backup.log` (o link de download temporário do Wrangler é filtrado e não vai para o log).
+- Rodar agora: `launchctl kickstart gui/$(id -u)/br.com.dabitech.custo.backup`. Desativar: `launchctl bootout gui/$(id -u)/br.com.dabitech.custo.backup`.
+- Ainda **sem cifra e sem cópia fora da máquina**: aceitável enquanto só houver dados de teste; antes de dados reais de clientes, cifrar (acima) e copiar para fora do Mac.
+
+**Rotina** (responsável: o proprietário do Custô):
 
 | Quando | O quê | Retenção |
 |---|---|---|
-| Antes de cada release (migração, Worker ou Pages) | export + manifest + verify | Até o release seguinte ser validado |
-| Semanal | export + manifest + verify + cifrar + cópia fora da máquina | 4 semanais |
-| Mensal | o semanal mais recente vira mensal | 3 mensais |
+| Antes de cada release (migração, Worker ou Pages) | export + manifest + verify (manual) | Até o release seguinte ser validado |
+| Semanal — **agendado** (segunda, 10h) | `scripts/backup-scheduled.sh`: export + manifest + verify | **90 dias** (descarte automático; é o prazo informado na política de privacidade) |
 | Mensal | **ensaio de restauração**: `backup:verify` do backup mensal e, a cada trimestre, restauração completa no banco `restore` (abaixo) | Registrar a data e o resultado |
 
 O **Time Travel não substitui** os backups externos: guarda só 7 dias no plano gratuito, fica na mesma conta e não protege contra um erro percebido tarde.

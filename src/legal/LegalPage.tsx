@@ -1,17 +1,16 @@
 /**
- * Páginas públicas /privacidade e /termos (abrem sem login). CONTEÚDO EM MINUTA: descreve fielmente o que o sistema faz hoje,
- * mas depende de revisão jurídica e das informações marcadas como pendentes (lista em docs/PRIVACIDADE_E_TERMOS.md).
- * Nada aqui pede consentimento: a base do tratamento é a execução do contrato do serviço (a definir na revisão jurídica).
+ * Páginas públicas /privacidade e /termos (abrem sem login). Textos jurídicos fornecidos pelo proprietário, mais a descrição
+ * fiel do que o sistema faz hoje (histórico em docs/PRIVACIDADE_E_TERMOS.md).
+ * Nada aqui pede consentimento: as bases legais estão na seção 4 da política.
  */
-import type { ReactNode } from 'react';
 import './legal.css';
 
 export const LEGAL_PATHS = ['/privacidade', '/termos'] as const;
 export type LegalPath = (typeof LEGAL_PATHS)[number];
 export const isLegalPath = (path: string): path is LegalPath => (LEGAL_PATHS as readonly string[]).includes(path.replace(/\/+$/, '') || '/');
 
-/** Informação que ainda não foi fornecida: aparece destacada, nunca inventada. */
-const Pending = ({ children }: { children: ReactNode }) => <mark className="legal-pending">[PENDENTE: {children}]</mark>;
+/** Data a partir da qual os textos publicados valem. */
+export const LEGAL_EFFECTIVE_DATE = '14 de novembro de 2026';
 
 function Privacy() {
   return <>
@@ -41,13 +40,13 @@ function Privacy() {
     <p>Quando houver transferência internacional, ela deverá observar os requisitos da Lei Geral de Proteção de Dados Pessoais (LGPD) e os mecanismos legais aplicáveis.</p>
     <p>O Custô adotará medidas contratuais, técnicas e organizacionais adequadas para proteger os dados pessoais tratados por seus fornecedores.</p>
     <h2>6. Por quanto tempo</h2>
-    <p>Mantemos os dados enquanto a conta existir. Após a exclusão, os dados são apagados conforme o procedimento de exclusão. Cópias de segurança são substituídas pelo ciclo de retenção dos backups. Prazos específicos: <Pending>prazos definitivos de retenção (proposta técnica em revisão)</Pending>.</p>
+    <p>Mantemos os dados enquanto a conta existir. Após um pedido de exclusão, os dados são apagados da base ativa. Cópias residuais podem permanecer por até 7 dias no histórico de recuperação do banco de dados e por até 90 dias nas cópias de segurança, que são descartadas automaticamente ao fim desse período. Registros de auditoria administrativa, que não contêm seu e-mail, são mantidos por até 365 dias por segurança.</p>
     <h2>7. Seus direitos</h2>
-    <p>Você pode pedir confirmação, acesso, correção, portabilidade e exclusão dos seus dados, e informações sobre o compartilhamento. Seus dados de trabalho podem ser exportados a qualquer momento em <strong>Backup</strong>, dentro do aplicativo. Pedidos pelo canal <a href="mailto:contato@dabitech.com.br">contato@dabitech.com.br</a>, com resposta em <Pending>prazo de atendimento</Pending>.</p>
+    <p>Você pode pedir confirmação, acesso, correção, portabilidade e exclusão dos seus dados, e informações sobre o compartilhamento. Seus dados de trabalho podem ser exportados a qualquer momento em <strong>Backup</strong>, dentro do aplicativo. Pedidos pelo canal <a href="mailto:contato@dabitech.com.br">contato@dabitech.com.br</a>. Não há um prazo fixo de resposta: os pedidos são atendidos assim que possível, observados os prazos previstos na legislação.</p>
     <h2>8. Segurança</h2>
     <p>Conexões cifradas (HTTPS), cookies de sessão protegidos (HttpOnly, Secure), proteção contra requisições forjadas, códigos e tokens guardados só como hash, isolamento entre contas e limites contra tentativas repetidas. Em caso de incidente relevante, comunicaremos os titulares afetados e a ANPD conforme a lei.</p>
     <h2>9. Alterações</h2>
-    <p>Esta política pode ser atualizada; a data da versão vigente aparece no topo. <Pending>data de vigência</Pending>.</p>
+    <p>Esta política pode ser atualizada; a data da versão vigente aparece no topo.</p>
   </>;
 }
 
@@ -102,7 +101,7 @@ export function LegalPage({ path }: { path: LegalPath }) {
   return <div className="legal-page">
     <header className="legal-head"><a href="/" aria-label="Custô — voltar ao aplicativo"><img src="/brand/custo-green.svg" alt="Custô" className="legal-logo" /></a></header>
     <main className="legal-card">
-      <p className="legal-draft" role="note"><strong>Minuta em revisão.</strong> Este texto ainda não é a versão definitiva e depende de revisão jurídica.</p>
+      <p className="legal-effective" role="note">Vigente desde {LEGAL_EFFECTIVE_DATE}.</p>
       {path === '/privacidade' ? <Privacy /> : <Terms />}
       <nav className="legal-nav" aria-label="Documentos"><a href="/privacidade">Política de privacidade</a><a href="/termos">Termos de uso</a><a href="/">Voltar ao Custô</a></nav>
     </main>
