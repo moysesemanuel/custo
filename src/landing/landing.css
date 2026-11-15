@@ -58,26 +58,28 @@
 .lp-feature-grid p{margin:0;font-size:14px;color:var(--lp-muted)}
 
 /* Notebook com o painel real */
-.lp-showcase{position:relative;margin-top:72px;padding:56px 0 64px;background:linear-gradient(180deg,#EFEAE3,var(--lp-bg));overflow:hidden}
-.lp-cake{position:absolute;left:0;top:50%;transform:translateY(-50%);height:92%;width:auto;aspect-ratio:368/600;
-  -webkit-mask-image:linear-gradient(90deg,#000 72%,transparent),linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent);-webkit-mask-composite:source-in;
-  mask-image:linear-gradient(90deg,#000 72%,transparent),linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent);mask-composite:intersect}
-.lp-mark{position:absolute;pointer-events:none;opacity:.06;filter:brightness(0) saturate(100%) invert(18%) sepia(40%) saturate(1500%) hue-rotate(140deg)}
-.lp-mark-showcase{right:-40px;top:10px;width:240px;height:auto}
-.lp-showcase-grid{position:relative;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:64px;align-items:center;padding-left:clamp(0px,9vw,150px)}
+/* Faixa clara de ponta a ponta (como no print de referência): bolo encostado à esquerda, notebook a partir de ~14% da largura
+   sobrepondo a borda direita do bolo, texto a partir de ~61% e a marca "ô" cortada na borda direita. */
+.lp-showcase{position:relative;margin-top:72px;padding:28px 0 26px;background:linear-gradient(180deg,#F2EEE8,#EFEAE3);overflow:hidden;border-radius:56px 0 0 0}
+.lp-cake{position:absolute;left:0;top:0;height:100%;width:auto;aspect-ratio:368/600;
+  -webkit-mask-image:linear-gradient(90deg,#000 80%,transparent),linear-gradient(180deg,transparent,#000 8%,#000 94%,transparent);-webkit-mask-composite:source-in;
+  mask-image:linear-gradient(90deg,#000 80%,transparent),linear-gradient(180deg,transparent,#000 8%,#000 94%,transparent);mask-composite:intersect}
+.lp-mark{position:absolute;pointer-events:none;opacity:.07;filter:brightness(0) saturate(100%) invert(18%) sepia(40%) saturate(1500%) hue-rotate(140deg)}
+.lp-mark-showcase{right:-2.5%;top:50%;transform:translateY(-50%);width:12%;min-width:120px;height:auto}
+.lp-showcase-grid{position:relative;max-width:none;display:grid;grid-template-columns:minmax(0,40fr) minmax(0,27fr);gap:5.5%;align-items:center;padding:0 11% 0 14.5%}
 .lp-laptop{position:relative;filter:drop-shadow(0 28px 34px rgba(20,32,31,.25))}
 .lp-laptop-screen{background:#141617;border-radius:14px 14px 0 0;padding:11px 11px 13px;border:1px solid #2c2f31}
 .lp-laptop-screen img{display:block;width:100%;height:auto;aspect-ratio:16/10;object-fit:cover;object-position:top left;border-radius:3px;background:#fff}
 .lp-laptop-base{height:15px;margin:0 -6%;background:linear-gradient(#e2e4e5,#a7acaf);border-radius:0 0 16px 16px;position:relative}
 .lp-laptop-base::before{content:"";position:absolute;left:50%;top:0;transform:translateX(-50%);width:15%;height:5px;background:#c3c7c9;border-radius:0 0 8px 8px}
-.lp-showcase h2{font-size:clamp(28px,2.6vw,32px);line-height:1.15;font-weight:800}
+.lp-showcase h2{font-size:clamp(26px,2.3vw,34px);line-height:1.15;font-weight:800}
 .lp-text{font-size:16px;color:var(--lp-muted);margin:14px 0 0}
 .lp-checks{list-style:none;padding:0;margin:22px 0 0;display:grid;gap:12px}
 .lp-checks li{display:flex;gap:12px;align-items:center;font-size:15px}
 .lp-checks svg{flex-shrink:0;color:#fff;fill:var(--lp-green)}
 
 /* Depoimento e benefícios */
-.lp-proof{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:32px;align-items:center;background:#F1EEE9;border:1px solid var(--lp-line);border-radius:36px;padding:24px 34px 24px 28px}
+.lp-proof{margin-top:24px;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:32px;align-items:center;background:#F1EEE9;border:1px solid var(--lp-line);border-radius:36px;padding:24px 34px 24px 28px}
 .lp-quote{margin:0;display:flex;gap:28px;align-items:center;padding-right:32px;border-right:1px solid #CFC8BD}
 .lp-avatar{flex-shrink:0;width:200px;aspect-ratio:3/2;border-radius:20px;display:grid;place-items:center;background:linear-gradient(135deg,var(--lp-green),#0B6B64);color:#fff;font-family:'Manrope Variable',Manrope,sans-serif;font-weight:800;font-size:54px;letter-spacing:-.04em}
 .lp-quote-mark{display:block;font-family:Georgia,serif;font-size:64px;line-height:.6;color:var(--lp-orange);font-weight:700;height:28px}
@@ -113,7 +115,7 @@
   .lp-hero-copy{margin-top:-24px;position:relative}
   .lp-features,.lp-showcase-grid,.lp-proof,.lp-final-row{grid-template-columns:minmax(0,1fr)}
   .lp-feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .lp-showcase-grid{padding-left:24px}.lp-cake{display:none}
+  .lp-showcase{border-radius:32px 0 0 0;padding:36px 0}.lp-showcase-grid{padding:0 24px;gap:40px}.lp-cake{display:none}
   .lp-quote{border-right:0;padding-right:0}
   .lp-final p{border-left:0;padding-left:0}
 }
@@ -126,7 +128,7 @@
   .lp-trust{gap:14px 22px}
   .lp-strip{grid-template-columns:1fr;border-radius:24px;padding:6px 10px}.lp-strip p+p{border-left:0;border-top:1px solid #CFC8BD}
   .lp-feature-grid{grid-template-columns:1fr}
-  .lp-showcase-grid{padding-left:16px;gap:36px}
+  .lp-showcase-grid{padding:0 16px;gap:32px}
   .lp-proof{padding:22px 18px;border-radius:24px}
   .lp-quote{flex-direction:column;align-items:flex-start;gap:18px}.lp-avatar{width:120px;font-size:40px}
   .lp-benefits{grid-template-columns:1fr;gap:20px}

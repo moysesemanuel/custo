@@ -81,7 +81,7 @@ export function Landing() {
       <section className="lp-showcase" id="numeros">
         <img className="lp-cake" src="/landing/bolo-morango.webp" alt="" aria-hidden="true" width={410} height={600} loading="lazy" />
         <Mark className="lp-mark lp-mark-showcase" />
-        <div className="lp-wrap lp-showcase-grid">
+        <div className="lp-showcase-grid">
           <div className="lp-laptop">
             <div className="lp-laptop-screen"><img src="/landing/app-dashboard.webp" alt="Painel do Custô com pedidos em aberto, valores a receber, pedidos confirmados e saldo estimado" width={1600} height={1000} loading="lazy" /></div>
             <div className="lp-laptop-base" aria-hidden="true" />
