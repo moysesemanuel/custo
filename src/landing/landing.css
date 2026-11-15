@@ -13,6 +13,10 @@
 .lp-header-row{display:flex;align-items:center;gap:36px;min-height:56px}
 .lp-logo{height:28px;width:auto;display:block}
 .lp-nav{display:flex;gap:34px}.lp-nav a{text-decoration:none;font-weight:600;font-size:13.5px}.lp-nav a:hover{color:var(--lp-cta)}
+.lp-nav-off{font-weight:600;font-size:13.5px;color:#9AA3A0;cursor:not-allowed;display:inline-flex;align-items:center;gap:6px}
+.lp-nav-off small{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:#E9E5DE;color:#6B7471;border-radius:99px;padding:2px 7px}
+/* Âncoras: o cabeçalho fixo não cobre o início da seção. */
+.lp [id]{scroll-margin-top:84px}
 .lp-header-cta{margin-left:auto;display:flex;align-items:center;gap:22px}
 .lp-link{font-weight:600;font-size:13.5px;text-decoration:none}.lp-link:hover{text-decoration:underline}
 

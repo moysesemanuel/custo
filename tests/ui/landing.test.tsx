@@ -25,6 +25,10 @@ describe('página de vendas', () => {
     expect(ctas.every(a => a.getAttribute('href') === BETA_MAILTO)).toBe(true);
     expect(BETA_MAILTO).toMatch(/^mailto:contato@dabitech\.com\.br\?subject=/);
     expect(screen.getByRole('link', { name: 'Entrar' }).getAttribute('href')).toBe('/entrar');
+    // cada âncora do menu aponta para uma seção que existe; "Planos" fica desabilitado (ainda não há planos)
+    for (const a of [...document.querySelectorAll('.lp-nav a')]) expect(document.getElementById(a.getAttribute('href')!.slice(1)), a.textContent!).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /planos/i })).toBeNull();
+    expect(document.querySelector('.lp-nav [aria-disabled="true"]')!.textContent).toMatch(/Planos/);
   });
   it('condições iguais às dos termos (14 dias, sem cartão, cancelamento) e nenhum número de resultado inventado', () => {
     render(<Landing />);

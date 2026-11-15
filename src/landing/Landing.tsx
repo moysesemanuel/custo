@@ -34,7 +34,7 @@ export function Landing() {
     <header className="lp-header">
       <div className="lp-wrap lp-header-row">
         <a href="/" aria-label="Custô — início"><img src="/brand/custo-green.svg" alt="Custô" className="lp-logo" width={140} height={50} /></a>
-        <nav className="lp-nav" aria-label="Seções"><a href="#solucoes">Soluções</a><a href="#numeros">Como funciona</a><a href="#clientes">Clientes</a><a href="#comecar">Planos</a></nav>
+        <nav className="lp-nav" aria-label="Seções"><a href="#solucoes">Soluções</a><a href="#numeros">Seus números</a><a href="#clientes">Clientes</a><span className="lp-nav-off" aria-disabled="true" title="Em breve">Planos <small>em breve</small></span></nav>
         <div className="lp-header-cta"><a className="lp-link" href="/entrar">Entrar</a><a className="lp-btn lp-btn-sm" href={BETA_MAILTO}>Testar grátis</a></div>
       </div>
     </header>
