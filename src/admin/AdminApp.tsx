@@ -7,9 +7,10 @@ import { Modal } from '../components/Modal';
 import { BrandPanel } from '../components/BrandPanel';
 import { ADMIN_MESSAGES, createAdminClient, type AdminClient, type AdminFailure, type AuditEvent, type CustomerDetail, type CustomerRow, type Overview } from './adminClient';
 import './admin.css';
+import { isTrialOver, TRIAL_DAYS, trialDaysLeft } from '../../shared/trial';
 
 const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—');
-const ACTIONS: Record<string, string> = { 'customer.create': 'Cadastro de cliente', 'customer.suspend': 'Suspensão de acesso', 'customer.activate': 'Reativação de acesso', 'session.revoke': 'Sessão revogada', 'session.revoke-all': 'Todas as sessões revogadas', 'admin.grant': 'Acesso administrativo concedido', 'admin.revoke': 'Acesso administrativo revogado' };
+const ACTIONS: Record<string, string> = { 'customer.create': 'Cadastro de cliente', 'customer.suspend': 'Suspensão de acesso', 'customer.activate': 'Reativação de acesso', 'customer.trial-extend': 'Teste prorrogado', 'customer.trial-permanent': 'Licença tornada permanente', 'session.revoke': 'Sessão revogada', 'session.revoke-all': 'Todas as sessões revogadas', 'admin.grant': 'Acesso administrativo concedido', 'admin.revoke': 'Acesso administrativo revogado' };
 const RESULTS: Record<string, string> = { ok: 'aplicado', noop: 'sem alteração' };
 type View = { name: 'overview' } | { name: 'customers' } | { name: 'customer'; id: string } | { name: 'audit'; licenseId?: string };
 
@@ -121,6 +122,18 @@ function OverviewPanel({ api, fail }: { api: AdminClient; fail: (r: AdminFailure
 }
 
 const statusTag = (s: 'active' | 'revoked') => <span className={s === 'active' ? 'tag green' : 'tag red'}>{s === 'active' ? 'Ativa' : 'Suspensa'}</span>;
+/** Situação do teste: sem prazo (nada), ainda não começou, em andamento (até quando) ou encerrado. */
+function trialText(c: { trialDays: number | null; trialEndsAt: string | null }): { text: string; tone: 'orange' | 'red' | '' } | null {
+  if (c.trialEndsAt) {
+    const now = new Date().toISOString();
+    if (isTrialOver(c.trialEndsAt, now)) return { text: `Teste encerrado em ${new Date(c.trialEndsAt).toLocaleDateString('pt-BR')}`, tone: 'red' };
+    const left = trialDaysLeft(c.trialEndsAt, now);
+    return { text: `Teste até ${new Date(c.trialEndsAt).toLocaleDateString('pt-BR')} (${left === 1 ? '1 dia' : `${left} dias`})`, tone: 'orange' };
+  }
+  if (c.trialDays) return { text: `Teste de ${c.trialDays} dias (começa no 1º acesso)`, tone: '' };
+  return null;
+}
+const trialTag = (c: { trialDays: number | null; trialEndsAt: string | null }) => { const t = trialText(c); return t ? <span className={`tag ${t.tone}`}>{t.text}</span> : null; };
 
 function CustomersPanel({ api, fail, open, inform }: { api: AdminClient; fail: (r: AdminFailure) => void; open: (id: string) => void; inform: (m: string) => void }) {
   const [q, setQ] = useState(''); const [applied, setApplied] = useState({ q: '', status: '' }); const [status, setStatus] = useState('');
@@ -140,7 +153,7 @@ function CustomersPanel({ api, fail, open, inform }: { api: AdminClient; fail: (
       <div><Field label="Situação"><select value={status} onChange={e => { setStatus(e.target.value); setApplied({ q: q.trim(), status: e.target.value }); }}><option value="">Todas</option><option value="active">Ativas</option><option value="revoked">Suspensas</option></select></Field></div>
       <button className="secondary" type="submit">Pesquisar</button></form>
     {err && <div className="notice error" role="alert">{err}</div>}
-    <ul className="admin-rows" aria-label="Clientes">{rows.map(c => <li key={c.id} className="admin-row"><div className="main"><strong>{c.email}</strong><div className="meta">{statusTag(c.status)}{c.isAdmin && <span className="tag">Administrador</span>}{c.label && <span>{c.label}</span>}<span>Cadastro: {when(c.createdAt)}</span><span>Último acesso: {c.accountId ? when(c.lastAccessAt) : 'ainda não entrou'}</span><span>Sessões ativas: {c.activeSessions}</span></div></div><button className="secondary" onClick={() => open(c.id)} aria-label={`Detalhes de ${c.email}`}>Detalhes</button></li>)}</ul>
+    <ul className="admin-rows" aria-label="Clientes">{rows.map(c => <li key={c.id} className="admin-row"><div className="main"><strong>{c.email}</strong><div className="meta">{statusTag(c.status)}{trialTag(c)}{c.isAdmin && <span className="tag">Administrador</span>}{c.label && <span>{c.label}</span>}<span>Cadastro: {when(c.createdAt)}</span><span>Último acesso: {c.accountId ? when(c.lastAccessAt) : 'ainda não entrou'}</span><span>Sessões ativas: {c.activeSessions}</span></div></div><button className="secondary" onClick={() => open(c.id)} aria-label={`Detalhes de ${c.email}`}>Detalhes</button></li>)}</ul>
     {loaded && !rows.length && !busy && <div className="empty">Nenhum cliente encontrado.</div>}
     {busy && <p className="muted" role="status">Carregando…</p>}
     {next && !busy && <div style={{ marginTop: 14 }}><button className="secondary" onClick={() => void load(applied, next)}>Carregar mais</button></div>}
@@ -148,22 +161,23 @@ function CustomersPanel({ api, fail, open, inform }: { api: AdminClient; fail: (
 }
 
 function AddCustomer({ api, close, done, fail }: { api: AdminClient; close: () => void; done: (msg: string, id: string | null) => void; fail: (r: AdminFailure) => void }) {
-  const [email, setEmail] = useState(''); const [label, setLabel] = useState(''); const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
+  const [email, setEmail] = useState(''); const [label, setLabel] = useState(''); const [trial, setTrial] = useState(true); const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
   async function submit(e: FormEvent) {
     e.preventDefault(); setBusy(true); setErr('');
-    const r = await api.createCustomer({ email: email.trim(), ...(label.trim() ? { label: label.trim() } : {}) }); setBusy(false);
+    const r = await api.createCustomer({ email: email.trim(), ...(label.trim() ? { label: label.trim() } : {}), trialDays: trial ? TRIAL_DAYS : null }); setBusy(false);
     if (!r.ok) { setErr(ADMIN_MESSAGES[r.reason]); fail(r.reason); return; }
     done(r.value.created ? `Cliente cadastrado: ${r.value.email}. Nenhum e-mail foi enviado; o primeiro login usa o código por e-mail.` : `Já existe uma licença para ${r.value.email}; nada foi criado nem alterado.`, r.value.id);
   }
   return <Modal title="Cadastrar cliente" titleId="add-customer" onClose={close} closeLabel="Fechar"><form className="stack" onSubmit={submit}>
     <Field label="E-mail do cliente"><input type="email" data-autofocus value={email} onChange={e => setEmail(e.target.value)} required /></Field>
     <Field label="Rótulo (opcional, só para você)"><input value={label} maxLength={60} onChange={e => setLabel(e.target.value)} placeholder="ex.: Doces da Bia" /></Field>
-    <p className="muted" style={{ margin: 0 }}>Cria a licença ativa para este e-mail. Nenhum código é enviado agora; o cliente pede o código na tela de login.</p>
+    <label style={{ display: 'flex', gap: 10, alignItems: 'center', fontWeight: 600 }}><input type="checkbox" checked={trial} onChange={e => setTrial(e.target.checked)} style={{ width: 18, height: 18 }} /> Teste gratuito de {TRIAL_DAYS} dias (desmarque para licença sem prazo)</label>
+    <p className="muted" style={{ margin: 0 }}>Cria a licença ativa para este e-mail. {trial ? `O teste de ${TRIAL_DAYS} dias começa a contar no primeiro acesso e termina sozinho. ` : ''}Nenhum código é enviado agora; o cliente pede o código na tela de login.</p>
     {err && <div className="notice error" role="alert">{err}</div>}
     <div className="modal-actions"><button type="button" className="secondary" onClick={close}>Cancelar</button><button className="primary" disabled={busy || !email.trim()}>{busy ? 'Cadastrando…' : 'Cadastrar'}</button></div></form></Modal>;
 }
 
-type Pending = { kind: 'suspend' | 'revoke-all' | 'revoke-one' | 'activate'; sessionId?: string; label?: string };
+type Pending = { kind: 'suspend' | 'revoke-all' | 'revoke-one' | 'activate' | 'extend' | 'permanent'; sessionId?: string; label?: string };
 
 function CustomerPanel({ api, id, fail, inform, back, history }: { api: AdminClient; id: string; fail: (r: AdminFailure) => void; inform: (m: string) => void; back: () => void; history: () => void }) {
   const [d, setD] = useState<CustomerDetail | null>(null); const [err, setErr] = useState(''); const [pending, setPending] = useState<Pending | null>(null);
@@ -175,8 +189,8 @@ function CustomerPanel({ api, id, fail, inform, back, history }: { api: AdminCli
     {err && <div className="notice error" role="alert" style={{ marginBottom: 12 }}>{err}</div>}
     <section className="card stack" style={{ marginBottom: 16 }}><h2 className="section-title">Conta</h2>
       <dl className="admin-dl"><dt>Licença</dt><dd>{statusTag(c.status)}{c.suspendedAt && ` desde ${when(c.suspendedAt)}`}</dd><dt>Identificador da conta</dt><dd>{c.accountId ?? 'ainda não entrou (sem conta criada)'}</dd><dt>Licença (ID)</dt><dd>{c.id}</dd><dt>E-mail</dt><dd>{c.email}</dd>{c.label && <><dt>Rótulo</dt><dd>{c.label}</dd></>}
-        <dt>Cadastro</dt><dd>{when(c.createdAt)}</dd><dt>Primeiro acesso</dt><dd>{when(c.emailVerifiedAt)}</dd><dt>Último acesso</dt><dd>{c.accountId ? when(c.lastAccessAt) : '—'}</dd><dt>Limites</dt><dd>{c.quotaActive} links ativos · {c.quotaDaily} novos por dia</dd></dl>
-      {c.isAdmin ? <div className="notice warn">Conta administrativa: não pode ser suspensa nem desconectada por este painel.</div> : <div className="admin-actions">{c.status === 'active' ? <button className="secondary danger" onClick={() => setPending({ kind: 'suspend' })}>Suspender acesso</button> : <button className="primary" onClick={() => setPending({ kind: 'activate' })}>Reativar acesso</button>}</div>}</section>
+        <dt>Cadastro</dt><dd>{when(c.createdAt)}</dd><dt>Primeiro acesso</dt><dd>{when(c.emailVerifiedAt)}</dd><dt>Último acesso</dt><dd>{c.accountId ? when(c.lastAccessAt) : '—'}</dd><dt>Limites</dt><dd>{c.quotaActive} links ativos · {c.quotaDaily} novos por dia</dd><dt>Prazo</dt><dd>{trialText(c)?.text ?? 'Sem prazo (licença permanente)'}</dd></dl>
+      {c.isAdmin ? <div className="notice warn">Conta administrativa: não pode ser suspensa nem desconectada por este painel.</div> : <div className="admin-actions">{c.status === 'active' ? <button className="secondary danger" onClick={() => setPending({ kind: 'suspend' })}>Suspender acesso</button> : <button className="primary" onClick={() => setPending({ kind: 'activate' })}>Reativar acesso</button>}{c.trialDays !== null && <><button className="secondary" onClick={() => setPending({ kind: 'extend' })}>Prorrogar teste em 7 dias</button><button className="secondary" onClick={() => setPending({ kind: 'permanent' })}>Tornar licença permanente</button></>}</div>}</section>
     <section className="card stack" style={{ marginBottom: 16 }}><h2 className="section-title">Sessões ativas ({d.sessions.length})</h2>
       {!d.sessions.length ? <p className="muted">Nenhum dispositivo conectado.</p> : <ul className="admin-rows">{d.sessions.map(s => <li key={s.id} className="admin-row"><div className="main"><strong>{s.deviceLabel ?? 'Dispositivo'}</strong><div className="meta"><span>Último uso: {when(s.lastSeenAt)}</span><span>Entrou em: {when(s.createdAt)}</span><span>Expira: {when(s.expiresAt)}</span></div></div>{!c.isAdmin && <button className="secondary danger" onClick={() => setPending({ kind: 'revoke-one', sessionId: s.id, label: s.deviceLabel ?? 'dispositivo' })}>Revogar</button>}</li>)}</ul>}
       {!c.isAdmin && d.sessions.length > 0 && <div className="admin-actions"><button className="secondary danger" onClick={() => setPending({ kind: 'revoke-all' })}>Revogar todas as sessões</button></div>}</section>
@@ -189,14 +203,14 @@ function CustomerPanel({ api, id, fail, inform, back, history }: { api: AdminCli
 function Confirm({ pending, email, api, id, close, done, fail }: { pending: Pending; email: string; api: AdminClient; id: string; close: () => void; done: (msg: string) => Promise<void>; fail: (r: AdminFailure) => void }) {
   const needsTyping = pending.kind === 'suspend' || pending.kind === 'revoke-all';
   const [typed, setTyped] = useState(''); const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
-  const text = { suspend: ['Suspender acesso', 'O cliente continua conectado, mas não sincroniza nem publica links. Nenhum dado é apagado. Você pode reativar depois.', 'Suspender'], activate: ['Reativar acesso', 'O cliente volta a sincronizar e publicar links.', 'Reativar'], 'revoke-all': ['Revogar todas as sessões', 'Todos os dispositivos do cliente serão desconectados e precisarão de um novo código por e-mail.', 'Revogar todas'], 'revoke-one': [`Revogar sessão de "${pending.label}"`, 'Este dispositivo será desconectado e precisará de um novo código.', 'Revogar'] }[pending.kind];
+  const text = { extend: ['Prorrogar teste em 7 dias', 'O fim do teste avança 7 dias (a partir de hoje, se já tiver terminado). Se o cliente ainda não entrou, ele ganha 7 dias a mais quando começar.', 'Prorrogar'], permanent: ['Tornar licença permanente', 'O teste deixa de ter prazo: o cliente continua com acesso sem data para terminar. Use quando ele contratar.', 'Tornar permanente'], suspend: ['Suspender acesso', 'O cliente continua conectado, mas não sincroniza nem publica links. Nenhum dado é apagado. Você pode reativar depois.', 'Suspender'], activate: ['Reativar acesso', 'O cliente volta a sincronizar e publicar links.', 'Reativar'], 'revoke-all': ['Revogar todas as sessões', 'Todos os dispositivos do cliente serão desconectados e precisarão de um novo código por e-mail.', 'Revogar todas'], 'revoke-one': [`Revogar sessão de "${pending.label}"`, 'Este dispositivo será desconectado e precisará de um novo código.', 'Revogar'] }[pending.kind];
   async function run() {
     setBusy(true); setErr('');
-    const r = pending.kind === 'suspend' ? await api.suspend(id, typed.trim()) : pending.kind === 'activate' ? await api.activate(id) : pending.kind === 'revoke-all' ? await api.revokeAll(id, typed.trim()) : await api.revokeSession(id, pending.sessionId as string);
+    const r = pending.kind === 'extend' ? await api.extendTrial(id, 7) : pending.kind === 'permanent' ? await api.makePermanent(id) : pending.kind === 'suspend' ? await api.suspend(id, typed.trim()) : pending.kind === 'activate' ? await api.activate(id) : pending.kind === 'revoke-all' ? await api.revokeAll(id, typed.trim()) : await api.revokeSession(id, pending.sessionId as string);
     setBusy(false);
     if (!r.ok) { setErr(ADMIN_MESSAGES[r.reason]); fail(r.reason); return; }   // só confirma o que o servidor confirmou
     const v = r.value as { changed?: boolean; revoked?: number | string };
-    await done(pending.kind === 'suspend' ? (v.changed === false ? 'Acesso já estava suspenso.' : 'Acesso suspenso.') : pending.kind === 'activate' ? (v.changed === false ? 'Acesso já estava ativo.' : 'Acesso reativado.') : pending.kind === 'revoke-all' ? `Sessões revogadas: ${v.revoked}.` : 'Sessão revogada.');
+    await done(pending.kind === 'extend' ? 'Teste prorrogado em 7 dias.' : pending.kind === 'permanent' ? (v.changed === false ? 'A licença já era permanente.' : 'Licença agora é permanente.') : pending.kind === 'suspend' ? (v.changed === false ? 'Acesso já estava suspenso.' : 'Acesso suspenso.') : pending.kind === 'activate' ? (v.changed === false ? 'Acesso já estava ativo.' : 'Acesso reativado.') : pending.kind === 'revoke-all' ? `Sessões revogadas: ${v.revoked}.` : 'Sessão revogada.');
   }
   return <Modal title={text[0]} titleId="confirm-admin" onClose={close} closeLabel="Fechar"><div className="stack">
     <p style={{ margin: 0 }}>{text[1]}</p>

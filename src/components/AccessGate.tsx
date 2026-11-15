@@ -28,7 +28,9 @@ export function AccessGate({ data, children }: { data: DataSet; children: ReactN
       <AccountPanel inform={setNote} variant="gate" />
     </>}
     {acc.access === 'inactive' && <section className="card stack">
-      <div className="notice warn" role="alert"><strong>Acesso indisponível.</strong> {acc.session?.license ? 'A licença desta conta foi revogada.' : 'Esta conta não tem licença ativa.'} Entre em contato com o suporte.</div>
+      {acc.session?.license?.status === 'expired'
+        ? <div className="notice warn" role="alert"><strong>Seu período de teste terminou.</strong> Obrigado por testar o Custô! Seus dados não foram apagados: baixe o backup deste aparelho abaixo. Para continuar usando, fale com <a href="mailto:contato@dabitech.com.br">contato@dabitech.com.br</a>.</div>
+        : <div className="notice warn" role="alert"><strong>Acesso indisponível.</strong> {acc.session?.license ? 'A licença desta conta foi revogada.' : 'Esta conta não tem licença ativa.'} Entre em contato com o suporte.</div>}
       <button className="secondary" onClick={() => void acc.signOut().then(r => { if (!r.ok) setNote(r.message); })}><LogOut size={16} /> Sair desta conta</button>
     </section>}
     {acc.access !== 'checking' && <section className="auth-backup stack">

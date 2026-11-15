@@ -108,9 +108,9 @@ function seedLegacy(raw: InstanceType<typeof DatabaseSync>) {
 
 describe('Migrações 0007 e 0008 sobre dados antigos (banco descartável, dados sintéticos)', () => {
   it.each([
-    ['0001–0006', '0006_prep_minutes.sql', ['0007_catalog_ref.sql', '0008_quote_code.sql', '0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql']],
-    ['0001–0007', '0007_catalog_ref.sql', ['0008_quote_code.sql', '0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql']],
-    ['0001–0008', '0008_quote_code.sql', ['0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql']],
+    ['0001–0006', '0006_prep_minutes.sql', ['0007_catalog_ref.sql', '0008_quote_code.sql', '0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql', '0013_license_trial.sql']],
+    ['0001–0007', '0007_catalog_ref.sql', ['0008_quote_code.sql', '0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql', '0013_license_trial.sql']],
+    ['0001–0008', '0008_quote_code.sql', ['0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql', '0013_license_trial.sql']],
   ])('estágio %s: detecta as aplicadas, simula só as pendentes e nada preexistente muda (mesmas colunas antes e depois)', (_n, upTo, expectedPending) => {
     const db = createTestD1({ upTo }); seedLegacy(db.raw); recordMigrations(db.raw, upTo);
     // Estágios mais novos já têm valores nas colunas que existem: eles precisam sobreviver intactos.
@@ -174,14 +174,15 @@ describe('Migrações 0007 e 0008 sobre dados antigos (banco descartável, dados
   });
 
   it('as migrações do repositório são exatamente as esperadas (nenhuma extra, nenhuma faltando)', () => {
-    expect(readdirSync(MIGRATIONS).filter(f => f.endsWith('.sql')).sort()).toEqual(['0001_quotes.sql', '0002_licenses.sql', '0003_accounts.sql', '0004_data.sql', '0005_payments.sql', '0006_prep_minutes.sql', '0007_catalog_ref.sql', '0008_quote_code.sql', '0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql']);
-    for (const f of ['0007_catalog_ref.sql', '0008_quote_code.sql', '0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql']) expect(sql(f), f).not.toMatch(/\b(DROP|DELETE|TRUNCATE)\b|UPDATE\s+\w+\s+SET/i);
+    expect(readdirSync(MIGRATIONS).filter(f => f.endsWith('.sql')).sort()).toEqual(['0001_quotes.sql', '0002_licenses.sql', '0003_accounts.sql', '0004_data.sql', '0005_payments.sql', '0006_prep_minutes.sql', '0007_catalog_ref.sql', '0008_quote_code.sql', '0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql', '0013_license_trial.sql']);
+    for (const f of ['0007_catalog_ref.sql', '0008_quote_code.sql', '0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql', '0013_license_trial.sql']) expect(sql(f), f).not.toMatch(/\b(DROP|DELETE|TRUNCATE)\b|UPDATE\s+\w+\s+SET/i);
   });
 });
 
 describe('Atualização completa em ensaio: banco antigo → migração → Worker novo → app novo', () => {
   async function legacyServer() {
-    const db = legacy(); const s = makeServer(undefined, { db });
+    const db = legacy(); db.raw.exec(sql('0013_license_trial.sql')); // o login do Worker novo lê o prazo da licença (0013 sempre antes do Worker)
+    const s = makeServer(undefined, { db });
     await s.issueFor('bia@exemplo.com'); const session = await s.login('bia@exemplo.com', 'Notebook', '10.0.0.1');
     const userId = (db.raw.prepare("SELECT id FROM users WHERE email = 'bia@exemplo.com'").get() as { id: string }).id;
     db.raw.exec('DELETE FROM sync_state'); // recomeça: o seed cria as linhas

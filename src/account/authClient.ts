@@ -1,9 +1,10 @@
 import { apiCall, field } from './http';
 
-export type LicenseInfo = { status: 'active' | 'revoked'; quotaActive: number; quotaDaily: number };
+/** `expired` = período de teste encerrado (o app bloqueia a interface; só o backup do aparelho fica disponível). */
+export type LicenseInfo = { status: 'active' | 'revoked' | 'expired'; quotaActive: number; quotaDaily: number; expiresAt?: string | null };
 export type SessionInfo = { user: { id: string; email: string }; csrfToken: string; sessionId: string; license: LicenseInfo | null };
 export type DeviceInfo = { id: string; deviceLabel: string | null; createdAt: string; lastSeenAt: string; current?: boolean };
-export type AuthFailure = 'network' | 'session-not-kept' | 'invalid-code' | 'rate-limited' | 'no-license' | 'unauthorized' | 'email-not-configured' | 'auth-not-configured' | 'invalid-request' | 'unexpected';
+export type AuthFailure = 'network' | 'session-not-kept' | 'invalid-code' | 'rate-limited' | 'no-license' | 'trial-ended' | 'unauthorized' | 'email-not-configured' | 'auth-not-configured' | 'invalid-request' | 'unexpected';
 export type AuthResult<T> = ({ ok: true; value: T }) | { ok: false; reason: AuthFailure; retryAfter?: number } | (T extends SessionInfo ? { ok: false; reason: 'device-limit'; sessions: DeviceInfo[] } : never);
 
 const isSession = (b: unknown): b is SessionInfo => !!b && typeof b === 'object' && typeof (b as SessionInfo).csrfToken === 'string' && typeof (b as SessionInfo).sessionId === 'string' && typeof (b as SessionInfo).user?.email === 'string';
@@ -13,7 +14,7 @@ function failure(res: { status: number; body: unknown; retryAfter?: number }): {
   const retry = res.retryAfter !== undefined ? { retryAfter: res.retryAfter } : {};
   if (res.status === 429) return { ok: false, reason: 'rate-limited', ...retry };
   if (res.status === 401) return { ok: false, reason: code === 'INVALID_CODE' ? 'invalid-code' : 'unauthorized' };
-  if (res.status === 403) return { ok: false, reason: code === 'NO_ACTIVE_LICENSE' || code === 'LICENSE_REVOKED' ? 'no-license' : 'unauthorized' };
+  if (res.status === 403) return { ok: false, reason: code === 'TRIAL_EXPIRED' ? 'trial-ended' : code === 'NO_ACTIVE_LICENSE' || code === 'LICENSE_REVOKED' ? 'no-license' : 'unauthorized' };
   if (res.status === 503) return { ok: false, reason: code === 'EMAIL_NOT_CONFIGURED' || code === 'EMAIL_SEND_FAILED' ? 'email-not-configured' : 'auth-not-configured' };
   if (res.status === 400) return { ok: false, reason: 'invalid-request' };
   return { ok: false, reason: 'unexpected' };
@@ -65,6 +66,7 @@ export const AUTH_MESSAGES: Record<AuthFailure | 'device-limit', string> = {
   'invalid-code': 'Código inválido ou expirado. Peça um novo código.',
   'rate-limited': 'Muitas tentativas. Aguarde um pouco e tente novamente.',
   'no-license': 'Não há licença ativa para este e-mail.',
+  'trial-ended': 'O seu período de teste gratuito terminou. Seus dados não foram apagados: baixe o backup deste aparelho abaixo. Para continuar usando o Custô, fale com contato@dabitech.com.br.',
   unauthorized: 'Sua sessão expirou. Entre novamente.',
   'email-not-configured': 'O envio de e-mail não está disponível neste ambiente.',
   'auth-not-configured': 'O login não está configurado neste ambiente.',

@@ -22,7 +22,7 @@ export const overview = (db: D1Like, nowIso: string, since30: string, since7: st
      (SELECT COUNT(DISTINCT user_id) FROM sessions WHERE last_seen_at >= ?3) AS recent_users_7d`,
 ).bind(nowIso, since30, since7).first<Overview>();
 
-export type CustomerRow = { id: string; email: string; label: string | null; status: 'active' | 'revoked'; created_at: string; revoked_at: string | null; user_id: string | null; active_sessions: number; last_seen_at: string | null; is_admin: number };
+export type CustomerRow = { id: string; email: string; label: string | null; status: 'active' | 'revoked'; created_at: string; revoked_at: string | null; user_id: string | null; active_sessions: number; last_seen_at: string | null; is_admin: number; trial_days: number | null; expires_at: string | null };
 const escapeLike = (s: string) => s.replace(/[\\%_]/g, c => `\\${c}`);
 
 /** Paginação por cursor (created_at, id): custo constante por página, sem OFFSET e sem carregar a tabela inteira. */
@@ -33,7 +33,7 @@ export async function listCustomers(db: D1Like, o: { q?: string; status?: 'activ
   if (o.cursor) { const a = args.push(o.cursor.createdAt), b = args.push(o.cursor.id); where.push(`(l.created_at < ?${a} OR (l.created_at = ?${a} AND l.id < ?${b}))`); }
   const lim = args.push(o.limit + 1);
   const r = await db.prepare(
-    `SELECT l.id, l.email, l.label, l.status, l.created_at, l.revoked_at, l.user_id,
+    `SELECT l.id, l.email, l.label, l.status, l.created_at, l.revoked_at, l.user_id, l.trial_days, l.expires_at,
        (SELECT COUNT(*) FROM sessions s WHERE s.user_id = l.user_id AND s.revoked_at IS NULL AND s.expires_at > ?1) AS active_sessions,
        (SELECT MAX(s.last_seen_at) FROM sessions s WHERE s.user_id = l.user_id) AS last_seen_at,
        (SELECT COUNT(*) FROM admins a WHERE a.user_id = l.user_id AND a.revoked_at IS NULL) AS is_admin
@@ -43,12 +43,12 @@ export async function listCustomers(db: D1Like, o: { q?: string; status?: 'activ
 }
 
 export const getCustomer = (db: D1Like, licenseId: string) => db.prepare(
-  `SELECT l.id, l.email, l.label, l.status, l.quota_active, l.quota_daily, l.created_at, l.revoked_at, l.user_id,
+  `SELECT l.id, l.email, l.label, l.status, l.quota_active, l.quota_daily, l.created_at, l.revoked_at, l.user_id, l.trial_days, l.expires_at,
      u.email_verified_at, u.created_at AS user_created_at, u.disabled_at,
      (SELECT MAX(s.last_seen_at) FROM sessions s WHERE s.user_id = l.user_id) AS last_seen_at,
      (SELECT COUNT(*) FROM admins a WHERE a.user_id = l.user_id AND a.revoked_at IS NULL) AS is_admin
    FROM licenses l LEFT JOIN users u ON u.id = l.user_id WHERE l.id = ?1 AND l.email IS NOT NULL`,
-).bind(licenseId).first<{ id: string; email: string; label: string | null; status: 'active' | 'revoked'; quota_active: number; quota_daily: number; created_at: string; revoked_at: string | null; user_id: string | null; email_verified_at: string | null; user_created_at: string | null; disabled_at: string | null; last_seen_at: string | null; is_admin: number }>();
+).bind(licenseId).first<{ id: string; email: string; label: string | null; status: 'active' | 'revoked'; quota_active: number; quota_daily: number; created_at: string; revoked_at: string | null; user_id: string | null; email_verified_at: string | null; user_created_at: string | null; disabled_at: string | null; last_seen_at: string | null; is_admin: number; trial_days: number | null; expires_at: string | null }>();
 
 export type SessionSummary = { id: string; device_label: string | null; created_at: string; last_seen_at: string; expires_at: string };
 /** Nunca seleciona token_hash nem csrf_token. */

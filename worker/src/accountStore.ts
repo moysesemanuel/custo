@@ -6,7 +6,7 @@ export type SessionRow = { id: string; user_id: string; token_hash: string; csrf
 export type CodeRow = { id: string; email: string; code_hash: string; created_at: string; expires_at: string; attempts: number; used_at: string | null };
 export type AccountLicense = LicenseRow & { email: string | null; user_id: string | null };
 
-const LICENSE_COLUMNS = 'id, key_hash, label, status, quota_active, quota_daily, created_at, revoked_at, email, user_id';
+const LICENSE_COLUMNS = 'id, key_hash, label, status, quota_active, quota_daily, created_at, revoked_at, email, user_id, trial_days, expires_at';
 
 // ---- usuários e licenças da conta ----
 export const findUserByEmail = (db: D1Like, email: string) => db.prepare('SELECT id, email, email_verified_at, created_at, disabled_at FROM users WHERE email = ?').bind(email).first<UserRow>();
@@ -16,8 +16,11 @@ export async function createVerifiedUser(db: D1Like, id: string, email: string, 
 }
 export const licenseForEmail = (db: D1Like, email: string) => db.prepare(`SELECT ${LICENSE_COLUMNS} FROM licenses WHERE email = ?`).bind(email).first<AccountLicense>();
 export const licenseForUser = (db: D1Like, userId: string) => db.prepare(`SELECT ${LICENSE_COLUMNS} FROM licenses WHERE user_id = ?`).bind(userId).first<AccountLicense>();
-export async function bindLicenseToUser(db: D1Like, licenseId: string, userId: string): Promise<void> {
-  await db.prepare('UPDATE licenses SET user_id = ? WHERE id = ? AND user_id IS NULL').bind(userId, licenseId).run();
+/** Primeiro acesso: liga a licença à conta e, se for de teste, começa a contar o prazo (agora + trial_days). */
+export async function bindLicenseToUser(db: D1Like, licenseId: string, userId: string, nowIso: string): Promise<void> {
+  await db.prepare(`UPDATE licenses SET user_id = ?1,
+      expires_at = CASE WHEN trial_days IS NOT NULL AND expires_at IS NULL THEN strftime('%Y-%m-%dT%H:%M:%fZ', ?3, '+' || trial_days || ' days') ELSE expires_at END
+    WHERE id = ?2 AND user_id IS NULL`).bind(userId, licenseId, nowIso).run();
 }
 
 // ---- códigos de acesso ----

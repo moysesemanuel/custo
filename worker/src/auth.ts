@@ -1,6 +1,7 @@
 import { parseBearer } from '../../shared/licenseKey';
 import { hashLicenseKey } from './licenses';
 import { consumeRateLimit, getLicenseByHash, type D1Like } from './store';
+import { isTrialOver } from '../../shared/trial.ts';
 
 export const DEFAULT_LIMITS = {
   /** Operações de escrita (criar, atualizar, revogar) por licença, por minuto. */
@@ -34,6 +35,7 @@ export function createLicenseAuthorizer(opts: { writesPerMinute?: number; verify
     const license = await getLicenseByHash(env.DB, await hashLicenseKey(key));
     if (!license) return UNAUTHORIZED;
     if (license.status !== 'active') return { ok: false, status: 403, error: 'LICENSE_REVOKED', message: 'Esta licença foi revogada. Entre em contato com o suporte.' };
+    if (isTrialOver(license.expires_at, now.toISOString())) return { ok: false, status: 403, error: 'TRIAL_EXPIRED', message: 'O período de teste desta conta terminou. Seus dados não foram apagados.' };
     const rate = await consumeRateLimit(env.DB, license.id, scope, perMinute[scope], 60, now.getTime());
     if (!rate.allowed) return { ok: false, status: 429, error: 'RATE_LIMITED', message: 'Muitas requisições. Aguarde um instante e tente novamente.', retryAfterSeconds: rate.retryAfterSeconds };
     return { ok: true, ownerId: license.id, limits: { quotaActive: license.quota_active, quotaDaily: license.quota_daily } };

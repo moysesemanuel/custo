@@ -8,6 +8,7 @@ import { loginCodeEmail } from './emailTemplates';
 import { apiError, json, readJsonBody, respond } from './http';
 import { checkCsrf, clearSessionCookie, resolveSession, sessionCookie, sessionIdleMs, sessionMaxAgeSeconds, type SessionEnv } from './session';
 import { consumeRateLimit, windowCount } from './store';
+import { effectiveStatus, isTrialOver, trialEndsAt } from '../../shared/trial.ts';
 
 export type AuthEnv = SessionEnv & { AUTH_SECRET?: string; /** Limite diário de e-mails de código (padrão 80). */ EMAIL_DAILY_LIMIT?: string };
 export type AuthDeps = { now: () => Date; email: (env: AuthEnv) => EmailSender };
@@ -39,7 +40,8 @@ async function throttle(env: AuthEnv, request: Request, now: Date, scope: 'login
 }
 
 const publicSession = (s: SessionRow, currentId?: string) => ({ id: s.id, deviceLabel: s.device_label, createdAt: s.created_at, lastSeenAt: s.last_seen_at, current: s.id === currentId });
-const publicLicense = (l: AccountLicense | null) => (l ? { status: l.status, quotaActive: l.quota_active, quotaDaily: l.quota_daily } : null);
+/** Situação EFETIVA (teste vencido = 'expired') e fim do teste, para o app avisar antes e bloquear depois. */
+const publicLicense = (l: AccountLicense | null, nowIso: string) => (l ? { status: effectiveStatus(l, nowIso), quotaActive: l.quota_active, quotaDaily: l.quota_daily, expiresAt: l.expires_at ?? null } : null);
 
 /** POST /api/auth/request-code: envia um código de acesso de 8 dígitos. A resposta é igual exista ou não uma conta (não revela cadastros). */
 export async function requestCode(request: Request, env: AuthEnv, deps: AuthDeps): Promise<Response> {
@@ -106,6 +108,8 @@ export async function verifyCode(request: Request, env: AuthEnv, deps: AuthDeps)
 
   const license = await licenseForEmail(env.DB, email);
   if (!license || license.status !== 'active') return apiError(403, 'NO_ACTIVE_LICENSE', 'Não há licença ativa para este e-mail.');
+  // Teste vencido: o código é consumido (uso único) e nenhuma sessão é aberta; o app mostra "seu teste terminou" e o backup.
+  if (isTrialOver(license.expires_at, iso)) { await markCodeUsed(env.DB, open.id, iso); return apiError(403, 'TRIAL_EXPIRED', 'O período de teste desta conta terminou. Seus dados não foram apagados.'); }
   let user = await findUserByEmail(env.DB, email);
   if (!user) { await createVerifiedUser(env.DB, newUserId(), email, iso); user = await findUserByEmail(env.DB, email); }
   if (!user || user.disabled_at) return apiError(403, 'ACCOUNT_DISABLED', 'Esta conta está desativada.');
@@ -120,14 +124,17 @@ export async function verifyCode(request: Request, env: AuthEnv, deps: AuthDeps)
   // o dispositivo de ninguém sem abrir a sessão nova.
   if (!(await markCodeUsed(env.DB, open.id, iso))) return wrong(); // uso único, mesmo com requisições simultâneas
   if (replace) await revokeSession(env.DB, user.id, replace, iso);
-  if (!license.user_id) await bindLicenseToUser(env.DB, license.id, user.id);
+  if (!license.user_id) {
+    await bindLicenseToUser(env.DB, license.id, user.id, iso);
+    if (license.trial_days && !license.expires_at) license.expires_at = trialEndsAt(iso, license.trial_days); // mesmo cálculo do UPDATE
+  }
 
   const token = randomToken(32);
   const sessionId = newSessionId();
   const csrf = randomToken(24);
   const created = await insertSessionWithinLimit(env.DB, { id: sessionId, user_id: user.id, token_hash: await sha256Hex(token), csrf_token: csrf, device_label: normalizeDeviceLabel(b.deviceLabel), created_at: iso, last_seen_at: iso, expires_at: addMs(iso, sessionIdleMs) }, iso, MAX_SESSIONS);
   if (!created) return limitReached();
-  const res = json({ user: { id: user.id, email: user.email }, csrfToken: csrf, sessionId, license: publicLicense(license) });
+  const res = json({ user: { id: user.id, email: user.email }, csrfToken: csrf, sessionId, license: publicLicense(license, iso) });
   res.headers.append('Set-Cookie', sessionCookie(request, token, sessionMaxAgeSeconds));
   return res;
 }
@@ -137,7 +144,7 @@ export async function currentSession(request: Request, env: AuthEnv, deps: AuthD
   const r = await resolveSession(request, env, deps.now());
   if (!r.ok) return apiError(r.status, r.error, r.message);
   const { user, session, license } = r.ctx;
-  return json({ user: { id: user.id, email: user.email }, csrfToken: session.csrf_token, sessionId: session.id, license: publicLicense(license) });
+  return json({ user: { id: user.id, email: user.email }, csrfToken: session.csrf_token, sessionId: session.id, license: publicLicense(license, deps.now().toISOString()) });
 }
 
 /** POST /api/auth/logout: encerra a sessão atual. */

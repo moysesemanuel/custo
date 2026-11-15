@@ -40,10 +40,12 @@ export async function revokeQuote(db: D1Like, id: string, ownerId: string, now: 
 }
 
 // ---- Licenças, limitação de taxa e cotas ----
-export type LicenseRow = { id: string; key_hash: string; label: string | null; status: 'active' | 'revoked'; quota_active: number; quota_daily: number; created_at: string; revoked_at: string | null };
+export type LicenseRow = { id: string; key_hash: string; label: string | null; status: 'active' | 'revoked'; quota_active: number; quota_daily: number; created_at: string; revoked_at: string | null;
+  /** Teste: dias de teste (NULL = sem prazo) e fim do teste (definido no primeiro acesso). */
+  trial_days?: number | null; expires_at?: string | null };
 
 export const getLicenseByHash = (db: D1Like, keyHash: string) =>
-  db.prepare('SELECT id, key_hash, label, status, quota_active, quota_daily, created_at, revoked_at FROM licenses WHERE key_hash = ?').bind(keyHash).first<LicenseRow>();
+  db.prepare('SELECT id, key_hash, label, status, quota_active, quota_daily, created_at, revoked_at, trial_days, expires_at FROM licenses WHERE key_hash = ?').bind(keyHash).first<LicenseRow>();
 
 /**
  * Conta uma operação na janela atual de forma ATÔMICA (um único UPSERT): se o contador já atingiu o limite,

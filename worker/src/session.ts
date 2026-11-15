@@ -2,6 +2,7 @@ import { addMs, sha256Hex, timingSafeEqual, SESSION_IDLE_DAYS, SESSION_MAX_DAYS 
 import { getSessionByTokenHash, licenseForUser, findUserById, touchSession, type AccountLicense, type SessionRow, type UserRow } from './accountStore';
 import { DEFAULT_LIMITS, type Authorizer } from './auth';
 import { consumeRateLimit, type D1Like } from './store';
+import { isTrialOver } from '../../shared/trial.ts';
 
 export type SessionEnv = { DB: D1Like; ALLOWED_ORIGINS?: string };
 const SECURE_COOKIE = '__Host-dabi_session';
@@ -80,6 +81,7 @@ export function createSessionAuthorizer(opts: { writesPerMinute?: number; verify
     const license = r.ctx.license;
     if (!license) return { ok: false, status: 403, error: 'NO_ACTIVE_LICENSE', message: 'Esta conta não tem licença ativa.' };
     if (license.status !== 'active') return { ok: false, status: 403, error: 'LICENSE_REVOKED', message: 'A licença desta conta foi revogada. Entre em contato com o suporte.' };
+    if (isTrialOver(license.expires_at, now.toISOString())) return { ok: false, status: 403, error: 'TRIAL_EXPIRED', message: 'O período de teste desta conta terminou. Seus dados não foram apagados.' };
     const rate = await consumeRateLimit(env.DB, license.id, scope, perMinute[scope], 60, now.getTime());
     if (!rate.allowed) return { ok: false, status: 429, error: 'RATE_LIMITED', message: 'Muitas requisições. Aguarde um instante e tente novamente.', retryAfterSeconds: rate.retryAfterSeconds };
     return { ok: true, ownerId: license.id, limits: { quotaActive: license.quota_active, quotaDaily: license.quota_daily } };
@@ -109,6 +111,7 @@ export async function authorizeAccount(request: Request, env: SessionEnv, now: D
   const license = r.ctx.license;
   if (!license) return { ok: false, status: 403, error: 'NO_ACTIVE_LICENSE', message: 'Esta conta não tem licença ativa.' };
   if (license.status !== 'active') return { ok: false, status: 403, error: 'LICENSE_REVOKED', message: 'A licença desta conta foi revogada. Entre em contato com o suporte.' };
+  if (isTrialOver(license.expires_at, now.toISOString())) return { ok: false, status: 403, error: 'TRIAL_EXPIRED', message: 'O período de teste desta conta terminou. Seus dados não foram apagados.' };
   const rate = await consumeRateLimit(env.DB, license.id, 'sync', SYNC_RATE_PER_MINUTE, 60, now.getTime());
   if (!rate.allowed) return { ok: false, status: 429, error: 'RATE_LIMITED', message: 'Muitas requisições. Aguarde um instante e tente novamente.', retryAfterSeconds: rate.retryAfterSeconds };
   return { ok: true, userId: r.ctx.user.id, licenseId: license.id };

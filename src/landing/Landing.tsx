@@ -5,11 +5,12 @@
  * O depoimento foi fornecido pelo proprietário (TESTIMONIAL abaixo).
  */
 import { ArrowRight, Box, Cake, Calculator, CalendarDays, CircleCheck, Clock, CreditCard, FileText, Heart, Layers, Play, ShoppingBag, Sparkles, TrendingUp, Wallet } from 'lucide-react';
+import { TRIAL_DAYS } from '../../shared/trial';
 import './landing.css';
 
 const CONTACT = 'contato@dabitech.com.br';
 export const BETA_MAILTO = `mailto:${CONTACT}?subject=${encodeURIComponent('Quero testar o Custô grátis')}&body=${encodeURIComponent('Olá! Quero participar do beta gratuito do Custô.\n\nMeu nome:\nNome do meu negócio:\nO que eu produzo:\nCidade:\n')}`;
-export const TRIAL_DAYS = 14;
+export { TRIAL_DAYS } from '../../shared/trial';
 
 export const TESTIMONIAL = {
   quote: 'O Custô mudou a forma como eu precifico meus produtos. Hoje eu tenho clareza do meu custo, sei exatamente o meu lucro e consigo planejar o crescimento da minha confeitaria com muito mais segurança.',

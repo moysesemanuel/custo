@@ -105,3 +105,12 @@ Autorização no servidor (usuário comum e sessão revogada/desativada/licença
 ## 13. Evolução futura (não implementada)
 
 Verificação adicional por código de e-mail para ações sensíveis (gasta cota do Resend); mais papéis (`admins.role` já aceita extensão); exclusão definitiva com política de retenção/exportação; retirada de orçamentos públicos ao suspender; teto por conta (R4/R5); métricas de uso só se houver consentimento e coleta mínima.
+
+## Período de teste (migração 0013)
+
+- **Cadastro:** "Cadastrar cliente" vem com "Teste gratuito de 14 dias" marcado (`shared/trial.ts`, `TRIAL_DAYS`). Desmarcado = licença sem prazo.
+- **Contagem:** o prazo começa no **primeiro acesso** (ativação da conta, termos 7.2): `expires_at = primeiro login + trial_days`. Cadastro sem login não gasta dias.
+- **Fim:** depois de `expires_at`, o Worker recusa sincronização, links e login (`403 TRIAL_EXPIRED`). O app mostra "Seu período de teste terminou" com **Sair** e **Baixar backup** deste aparelho. Nada é apagado.
+- **Ações no painel:** "Prorrogar teste em 7 dias" (a partir do fim atual, ou de hoje se já venceu; antes do 1º acesso, soma dias) e "Tornar licença permanente" (remove o prazo; devolve o acesso na hora). As duas ficam no histórico.
+- **Licenças existentes:** `trial_days` e `expires_at` nulos = sem prazo; nada muda para elas.
+- **Ordem de publicação:** aplicar a migração 0013 **antes** do Worker novo (o login do Worker novo lê as colunas novas).

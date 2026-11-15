@@ -3,6 +3,7 @@ import { ArrowLeft, KeyRound, LogOut, Mail, MonitorSmartphone, ShieldCheck, Tras
 import { useAccount } from '../../account/AccountContext';
 import { AUTH_MESSAGES, type DeviceInfo } from '../../account/authClient';
 import { Field } from '../../components/Field';
+import { trialDaysLeft } from '../../../shared/trial';
 
 const defaultDeviceLabel = (): string => {
   const ua = typeof navigator === 'undefined' ? '' : navigator.userAgent;
@@ -62,7 +63,7 @@ export function AccountPanel({ inform, variant = 'settings' }: { inform: (m: str
     const s = acc.session;
     return <section className="card stack"><span className="icon-box"><MonitorSmartphone size={21} /></span><h2 className="section-title">Conta</h2>
       <div className="notice">Conectado como <strong>{s.user.email}</strong>.</div>
-      {s.license?.status === 'active' ? <p className="muted">Licença ativa. Limites: {s.license.quotaActive} links ativos e {s.license.quotaDaily} novos links por dia.</p> : <div className="notice warn">{s.license ? 'A licença desta conta foi revogada.' : 'Esta conta não tem licença ativa.'} A sincronização e o compartilhamento ficam indisponíveis, mas seus dados continuam neste dispositivo.</div>}
+      {s.license?.status === 'active' ? <><p className="muted">Licença ativa. Limites: {s.license.quotaActive} links ativos e {s.license.quotaDaily} novos links por dia.</p>{s.license.expiresAt && <TrialNotice expiresAt={s.license.expiresAt} />}</> : <div className="notice warn">{s.license?.status === 'expired' ? 'O período de teste desta conta terminou.' : s.license ? 'A licença desta conta foi revogada.' : 'Esta conta não tem licença ativa.'} A sincronização e o compartilhamento ficam indisponíveis, mas seus dados continuam neste dispositivo.</div>}
       <div><strong style={{ fontSize: 14 }}>Dispositivos autorizados (máx. 2)</strong>
         <ul style={{ listStyle: 'none', margin: '8px 0 0', padding: 0 }}>{devices.map(d => <li key={d.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: '1px solid var(--color-border)' }}>
           <span>{d.deviceLabel ?? 'Dispositivo'}{d.current ? <span className="tag green" style={{ marginLeft: 6 }}>Este aparelho</span> : null}<span className="muted" style={{ display: 'block', fontSize: 12 }}>Último uso: {when(d.lastSeenAt)}</span></span>
@@ -98,4 +99,11 @@ export function AccountPanel({ inform, variant = 'settings' }: { inform: (m: str
     {!error && acc.authNotice && <div className="notice warn" role="alert">{acc.authNotice}</div>}
     <div className="auth-security"><span className="auth-divider" /><p><ShieldCheck size={16} aria-hidden="true" /> Login seguro, rápido e sem senha.</p></div>
   </section>;
+}
+
+/** Aviso do teste gratuito: quantos dias faltam e quando termina. */
+function TrialNotice({ expiresAt }: { expiresAt: string }) {
+  const left = trialDaysLeft(expiresAt, new Date().toISOString());
+  const day = new Date(expiresAt).toLocaleDateString('pt-BR');
+  return <div className={left <= 3 ? 'notice warn' : 'notice'} role="status">Teste gratuito: {left === 1 ? 'falta 1 dia' : `faltam ${left} dias`} (termina em {day}). Para continuar depois disso, fale com contato@dabitech.com.br.</div>;
 }

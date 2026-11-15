@@ -16,7 +16,9 @@ export const ADMIN_MESSAGES: Record<AdminFailure, string> = {
 };
 
 export type Overview = { generatedAt: string; customers: { total: number; active: number; suspended: number; pendingFirstLogin: number; new30d: number }; activeSessions: number; recentUsers7d: number };
-export type CustomerRow = { id: string; email: string; label: string | null; status: 'active' | 'revoked'; createdAt: string; suspendedAt: string | null; accountId: string | null; lastAccessAt: string | null; isAdmin: boolean; activeSessions: number };
+export type CustomerRow = { id: string; email: string; label: string | null; status: 'active' | 'revoked'; createdAt: string; suspendedAt: string | null; accountId: string | null; lastAccessAt: string | null; isAdmin: boolean; activeSessions: number;
+  /** Teste: dias (null = sem prazo) e fim (null enquanto o cliente não fez o primeiro acesso). */
+  trialDays: number | null; trialEndsAt: string | null };
 export type CustomerDetail = { customer: Omit<CustomerRow, 'activeSessions'> & { quotaActive: number; quotaDaily: number; emailVerifiedAt: string | null; accountCreatedAt: string | null; accountDisabledAt: string | null }; sessions: { id: string; deviceLabel: string | null; createdAt: string; lastSeenAt: string; expiresAt: string }[]; history: AuditEvent[]; historyHasMore: boolean };
 export type AuditEvent = { id: number; at: string; action: string; result: string; detail: string | null; admin: string | null; licenseId: string | null; customerEmail: string | null };
 
@@ -47,8 +49,10 @@ export function createAdminClient(base: string, getCsrf: () => string | undefine
     overview: () => call<Overview>('/overview', {}, whole<Overview>),
     customers: (o: { q?: string; status?: string; cursor?: string }) => call<{ customers: CustomerRow[]; nextCursor: string | null }>(`/customers${qs({ ...o, limit: '25' })}`, {}, whole),
     customer: (id: string) => call<CustomerDetail>(`/customers/${id}`, {}, whole),
-    createCustomer: (b: { email: string; label?: string }) => call<{ created: boolean; id: string | null; email: string }>('/customers', { method: 'POST', body: b }, whole),
+    createCustomer: (b: { email: string; label?: string; trialDays?: number | null }) => call<{ created: boolean; id: string | null; email: string }>('/customers', { method: 'POST', body: b }, whole),
     suspend: (id: string, confirmEmail: string) => call<{ changed: boolean }>(`/customers/${id}/suspend`, { method: 'POST', body: { confirmEmail } }, whole),
+    extendTrial: (id: string, days: number) => call<{ trialDays: number | null; trialEndsAt: string | null }>(`/customers/${id}/trial/extend`, { method: 'POST', body: { days } }, whole),
+    makePermanent: (id: string) => call<{ changed: boolean }>(`/customers/${id}/trial/permanent`, { method: 'POST', body: {} }, whole),
     activate: (id: string) => call<{ changed: boolean }>(`/customers/${id}/activate`, { method: 'POST', body: {} }, whole),
     revokeSession: (id: string, sessionId: string) => call<{ revoked: string }>(`/customers/${id}/sessions/${sessionId}`, { method: 'DELETE' }, whole),
     revokeAll: (id: string, confirmEmail: string) => call<{ revoked: number }>(`/customers/${id}/sessions/revoke-all`, { method: 'POST', body: { confirmEmail } }, whole),
