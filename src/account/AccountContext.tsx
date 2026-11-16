@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { DataSet } from '../domain/types';
 import { createQuotesClient, type QuotesClient } from '../features/sharing/quotes';
+import { createSupportClient, type SupportClient } from '../features/support/supportClient';
 import { loadSyncMeta, saveSyncMeta } from '../storage/db';
 import { createHttpSyncApi } from '../sync/api';
 import { buildPushes, emptyDataSet, emptyMeta, isOpenFinancial, isPendingConflict, isUnresolved, rebaseLocal, syncOnce, type ConflictRecord, type SyncMeta, type SyncTrace } from '../sync/engine';
@@ -29,6 +30,7 @@ type Ctx = {
   session?: SessionInfo;
   auth: AuthClient | null;
   quotes: QuotesClient | null;
+  support: SupportClient | null;
   /** Licença ativa na conta: só então há sincronização e compartilhamento. */
   entitled: boolean;
   /** Versão comercial: se o app pode ser usado (login + licença ativa, ou tolerância offline). */
@@ -86,6 +88,7 @@ export function AccountProvider({ data, setData, ready: readyProp, epoch = 0, me
   const auth = useMemo(() => (base ? createAuthClient(base) : null), [base]);
   const csrfRef = useRef<string | undefined>(undefined);
   const quotes = useMemo(() => (base ? createQuotesClient(base, () => csrfRef.current) : null), [base]);
+  const support = useMemo(() => (base ? createSupportClient(base, () => csrfRef.current) : null), [base]);
   const [status, setStatus] = useState<AccountStatus>(base ? 'loading' : 'unconfigured');
   const [session, setSessionState] = useState<SessionInfo | undefined>();
   const [sync, setSync] = useState<SyncState>({ phase: 'idle', blocked: null });
@@ -251,7 +254,7 @@ export function AccountProvider({ data, setData, ready: readyProp, epoch = 0, me
   const hasPending = useMemo(() => (entitled && ready && metaRef.current ? buildPushes(data, metaRef.current).length > 0 : false), [data, entitled, ready, sync, conflicts]);
 
   const value: Ctx = {
-    status, session, auth, quotes, entitled, access, requireLogin, setSession,
+    status, session, auth, quotes, support, entitled, access, requireLogin, setSession,
     async signOut(): Promise<SignOutResult> {
       if (auth) {
         if (!csrfRef.current) return { ok: false, message: 'Não foi possível confirmar a saída agora. Recarregue a página e tente de novo.' };

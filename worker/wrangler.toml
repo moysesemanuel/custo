@@ -51,6 +51,10 @@ LEGACY_KEY_AUTH = "off"
 EMAIL_ADAPTER = "resend"
 EMAIL_FROM = "Custô <acesso@mail.dabitech.com.br>"
 
+# Workers AI: assistente do suporte (cota gratuita diária; acima dela as dúvidas vão para a equipe). Ver docs/SUPORTE.md.
+[env.staging.ai]
+binding = "AI"
+
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "dabi-orcamentos-staging"
@@ -73,6 +77,10 @@ LEGACY_KEY_AUTH = "off"
 EMAIL_ADAPTER = "resend"
 # Mesmo remetente já verificado no Resend (domínio mail.dabitech.com.br); só o nome de exibição é do Custô.
 EMAIL_FROM = "Custô <acesso@mail.dabitech.com.br>"
+
+# Workers AI: assistente do suporte (cota gratuita diária; acima dela as dúvidas vão para a equipe). Ver docs/SUPORTE.md.
+[env.production.ai]
+binding = "AI"
 
 [[env.production.d1_databases]]
 binding = "DB"

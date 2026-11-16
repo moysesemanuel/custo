@@ -7,6 +7,8 @@ import { cleanPersonName, PERSON_NAME_MAX } from '../../shared/personName';
 import { checkCsrf, resolveSession, type SessionEnv } from './session';
 import { consumeRateLimit, windowCount } from './store';
 import { EMAIL_BUDGET_SCOPE, emailDailyLimit, GLOBAL_EMAIL_KEY } from './authRoutes';
+import { aiDailyLimit, aiUsedToday, publicTicket, SUPPORT_LIMITS, type SupportEnv } from './supportRoutes';
+import { randomToken } from './accounts';
 
 export type AdminDeps = { now: () => Date };
 export const ADMIN_RATE = { readPerMinute: 120, writePerMinute: 30 } as const;
@@ -41,7 +43,7 @@ const publicCustomer = (c: { id: string; email: string; label: string | null; ho
 const publicAudit = (a: Awaited<ReturnType<typeof listAudit>>[number]) => ({ id: a.id, at: a.at, action: a.action, result: a.result, detail: a.detail, admin: a.admin_email ?? (a.admin_user_id === 'cli' ? 'terminal (bootstrap)' : null), licenseId: a.license_id, customerEmail: a.license_email });
 
 /** Roteador /api/admin/*. Devolve undefined se a rota não for administrativa. */
-export async function adminRoute(request: Request, env: SessionEnv, deps: AdminDeps, pathname: string): Promise<Response | undefined> {
+export async function adminRoute(request: Request, env: SessionEnv & SupportEnv, deps: AdminDeps, pathname: string): Promise<Response | undefined> {
   if (!pathname.startsWith('/api/admin/') && pathname !== '/api/admin') return undefined;
   const path = pathname.replace(/\/+$/, '');
   const method = request.method.toUpperCase();
@@ -51,7 +53,8 @@ export async function adminRoute(request: Request, env: SessionEnv, deps: AdminD
   if (method !== 'GET' && method !== 'POST' && method !== 'DELETE') return apiError(405, 'METHOD_NOT_ALLOWED', 'Método não permitido.');
 
   const m = path.match(/^\/api\/admin\/customers\/(lic_[0-9a-f]{16})(?:\/(suspend|activate|sessions|trial|name|email)(?:\/(revoke-all|extend|permanent|until|ses_[0-9a-f]{16}))?)?$/);
-  const known = path === '/api/admin/me' || path === '/api/admin/overview' || path === '/api/admin/metrics' || path === '/api/admin/customers' || path === '/api/admin/audit' || m;
+  const sup = path.match(/^\/api\/admin\/support(?:\/(stk_[A-Za-z0-9_-]{12})\/(reply|close))?$/);
+  const known = !!sup || path === '/api/admin/me' || path === '/api/admin/overview' || path === '/api/admin/metrics' || path === '/api/admin/customers' || path === '/api/admin/audit' || m;
   if (!known) return apiError(404, 'NOT_FOUND', 'Rota não encontrada.');
   const gate = await authorizeAdmin(request, env, deps, write);
   if (!gate.ok) return gate.response;
@@ -64,6 +67,37 @@ export async function adminRoute(request: Request, env: SessionEnv, deps: AdminD
   if (path === '/api/admin/overview' && method === 'GET') {
     const o = await overview(env.DB, iso, addMs(iso, -30 * DAY), addMs(iso, -7 * DAY));
     return json({ generatedAt: iso, customers: { total: o?.total ?? 0, active: o?.active ?? 0, suspended: o?.suspended ?? 0, pendingFirstLogin: o?.pending_first_login ?? 0, new30d: o?.new_30d ?? 0 }, activeSessions: o?.active_sessions ?? 0, recentUsers7d: o?.recent_users_7d ?? 0 });
+  }
+
+  // Suporte: conversas dos clientes (dúvidas, sugestões, reclamações). A equipe lê, responde e encerra.
+  if (sup && !sup[1] && method === 'GET') {
+    const status = url.searchParams.get('status');
+    const filter = status === 'open' ? "WHERE t.status = 'open'" : '';
+    const rows = (await env.DB.prepare(`SELECT t.id, t.kind, t.status, t.created_at, t.updated_at, t.unread_for_user, u.email, l.holder_name
+       FROM support_tickets t LEFT JOIN users u ON u.id = t.user_id LEFT JOIN licenses l ON l.user_id = t.user_id ${filter} ORDER BY t.updated_at DESC LIMIT 50`).bind().all<{ id: string; kind: 'question' | 'suggestion' | 'complaint'; status: 'open' | 'answered' | 'closed'; created_at: string; updated_at: string; unread_for_user: number; email: string | null; holder_name: string | null }>()).results;
+    const ids = rows.map(r => r.id);
+    const msgs = ids.length ? (await env.DB.prepare(`SELECT id, ticket_id, author, body, created_at FROM support_messages WHERE ticket_id IN (${ids.map((_, i) => `?${i + 1}`).join(',')}) ORDER BY rowid`).bind(...ids).all<{ id: string; ticket_id: string; author: 'user' | 'ai' | 'team'; body: string; created_at: string }>()).results : [];
+    const open = await env.DB.prepare("SELECT COUNT(*) AS n FROM support_tickets WHERE status = 'open'").bind().first<{ n: number }>();
+    return json({ openCount: open?.n ?? 0, tickets: rows.map(r => ({ ...publicTicket(r, msgs.filter(x => x.ticket_id === r.id)), customer: { email: r.email, name: r.holder_name } })) });
+  }
+  if (sup && sup[1] && method === 'POST') {
+    const id = sup[1];
+    const t = await env.DB.prepare('SELECT id FROM support_tickets WHERE id = ?').bind(id).first<{ id: string }>();
+    if (!t) return apiError(404, 'NOT_FOUND', 'Conversa não encontrada.');
+    if (sup[2] === 'close') {
+      await env.DB.prepare("UPDATE support_tickets SET status = 'closed', updated_at = ?1 WHERE id = ?2").bind(iso, id).run();
+      return json({ id, status: 'closed' });
+    }
+    const body = await readJsonBody(request, 8192);
+    if (!body.ok) return apiError(body.status, body.error, 'Corpo da requisição inválido.');
+    const raw = (body.data as { message?: unknown } | null)?.message;
+    const text = typeof raw === 'string' ? raw.replace(/\r\n/g, '\n').trim() : '';
+    if (!text || text.length > SUPPORT_LIMITS.bodyMax) return apiError(400, 'INVALID_REQUEST', `Escreva a resposta (até ${SUPPORT_LIMITS.bodyMax} caracteres).`);
+    await env.DB.batch([
+      env.DB.prepare("INSERT INTO support_messages (id, ticket_id, author, body, created_at) VALUES (?1, ?2, 'team', ?3, ?4)").bind(`smg_${randomToken(9)}`, id, text, iso),
+      env.DB.prepare("UPDATE support_tickets SET status = 'answered', unread_for_user = 1, updated_at = ?1 WHERE id = ?2").bind(iso, id),
+    ]);
+    return json({ id, status: 'answered' });
   }
 
   if (path === '/api/admin/metrics' && method === 'GET') {
@@ -82,6 +116,7 @@ export async function adminRoute(request: Request, env: SessionEnv, deps: AdminD
       activeUsers: { d1: n(m.activity?.d1), d7: n(m.activity?.d7), d30: n(m.activity?.d30) },
       licenses: { permanent: n(m.status?.permanent), trialRunning: n(m.status?.trial_running), trialEnding: n(m.status?.trial_ending), trialEnded: n(m.status?.trial_ended), trialNotStarted: n(m.status?.trial_not_started), suspended: n(m.status?.suspended) },
       // Uso real que o próprio banco registra: e-mails de login enviados hoje (o contador que segura a cota do Resend).
+      supportAi: { today: await aiUsedToday(env, Date.parse(iso)), dailyLimit: aiDailyLimit(env), provider: env.SUPPORT_AI_PROVIDER === 'anthropic' ? 'anthropic' : 'workers-ai' },
       email: { today: await windowCount(env.DB, GLOBAL_EMAIL_KEY, EMAIL_BUDGET_SCOPE, 86_400, Date.parse(iso)), dailyLimit: emailDailyLimit(env as Parameters<typeof emailDailyLimit>[0]) },
       funnel: { registered: n(m.funnel?.registered), loggedIn: n(m.funnel?.logged_in), withOrders: n(m.funnel?.with_orders), active7d: n(m.funnel?.active_7d) },
     });

@@ -6,6 +6,8 @@ import { currentSession, logout, requestCode, sessionRevoke, sessionsList, verif
 import { createEmailSender, type EmailSender } from './email';
 import { createCompositeAuthorizer } from './session';
 import { adminRoute } from './adminRoutes';
+import { supportRoute } from './supportRoutes';
+import type { WorkersAi } from './supportAi';
 import { syncPull, syncPush } from './syncRoutes';
 import { LEGACY_SYNC_PATHS, SYNC_PATHS } from '../../shared/sync';
 import { countQuotaUsage, generateId, getQuote, ID_PATTERN, insertQuoteWithinQuotas, listQuotesByOwner, revokeQuote, updateQuotePayload, type D1Like, type QuoteRow } from './store';
@@ -26,6 +28,14 @@ export interface Env {
   EMAIL_FROM?: string;
   /** Limite diário de e-mails de código de acesso (padrão 80, abaixo dos 100/dia do plano gratuito do Resend). Ajuste ao mudar de plano. */
   EMAIL_DAILY_LIMIT?: string;
+  /** Workers AI (binding `AI`): assistente do suporte na cota gratuita. */
+  AI?: WorkersAi;
+  /** `workers-ai` (padrão) ou `anthropic` (Claude; exige o segredo ANTHROPIC_API_KEY). */
+  SUPPORT_AI_PROVIDER?: string;
+  SUPPORT_AI_MODEL?: string;
+  ANTHROPIC_API_KEY?: string;
+  /** Respostas da IA por dia (padrão 80), abaixo da cota gratuita do Workers AI. */
+  SUPPORT_AI_DAILY_LIMIT?: string;
   /** `on` reativa a autenticação antiga por chave de licença (Bearer). Padrão: desligada. */
   LEGACY_KEY_AUTH?: string;
   /** `staging` ou `production`. Se definido, requisições do Pages com `X-Dabi-Expect-Env` de OUTRO ambiente são recusadas (421): um Pages de homologação nunca usa o banco de produção por engano. */
@@ -175,6 +185,7 @@ export function createHandler(options: Options) {
         if (del && method === 'DELETE') return await sessionRevoke(request, env, authDeps, del[1]);
         return apiError(404, 'NOT_FOUND', 'Rota não encontrada.');
       }
+      if (pathname === '/api/support' || pathname.startsWith('/api/support/')) return (await supportRoute(request, env, { now }, pathname)) ?? apiError(404, 'NOT_FOUND', 'Rota não encontrada.');
       if (pathname === '/api/admin' || pathname.startsWith('/api/admin/')) return (await adminRoute(request, env, { now }, pathname)) ?? apiError(404, 'NOT_FOUND', 'Rota não encontrada.');
       if (pathname === SYNC_PATHS.pull || pathname === SYNC_PATHS.push) {
         if (pathname === SYNC_PATHS.pull && method === 'GET') return await syncPull(request, env, authDeps);

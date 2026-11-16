@@ -20,7 +20,10 @@ export type Metrics = { generatedAt: string; weeks: { start: string; signups: nu
   activeUsers: { d1: number; d7: number; d30: number };
   licenses: { permanent: number; trialRunning: number; trialEnding: number; trialEnded: number; trialNotStarted: number; suspended: number };
   funnel: { registered: number; loggedIn: number; withOrders: number; active7d: number };
-  email: { today: number; dailyLimit: number } };
+  email: { today: number; dailyLimit: number };
+  supportAi: { today: number; dailyLimit: number; provider: 'workers-ai' | 'anthropic' } };
+export type SupportInboxTicket = { id: string; kind: 'question' | 'suggestion' | 'complaint'; status: 'open' | 'answered' | 'closed'; createdAt: string; updatedAt: string; unread: boolean;
+  messages: { id: string; author: 'user' | 'ai' | 'team'; body: string; createdAt: string }[]; customer: { email: string | null; name: string | null } };
 export type CustomerRow = { id: string; email: string; label: string | null; name: string | null; status: 'active' | 'revoked'; createdAt: string; suspendedAt: string | null; accountId: string | null; lastAccessAt: string | null; isAdmin: boolean; activeSessions: number;
   /** Teste: dias (null = sem prazo) e fim (null enquanto o cliente não fez o primeiro acesso). */
   trialDays: number | null; trialEndsAt: string | null };
@@ -65,6 +68,9 @@ export function createAdminClient(base: string, getCsrf: () => string | undefine
     activate: (id: string) => call<{ changed: boolean }>(`/customers/${id}/activate`, { method: 'POST', body: {} }, whole),
     revokeSession: (id: string, sessionId: string) => call<{ revoked: string }>(`/customers/${id}/sessions/${sessionId}`, { method: 'DELETE' }, whole),
     revokeAll: (id: string, confirmEmail: string) => call<{ revoked: number }>(`/customers/${id}/sessions/revoke-all`, { method: 'POST', body: { confirmEmail } }, whole),
+    support: (status: 'open' | 'all') => call<{ openCount: number; tickets: SupportInboxTicket[] }>(`/support${status === 'open' ? '?status=open' : ''}`, {}, whole),
+    supportReply: (id: string, message: string) => call<{ status: string }>(`/support/${id}/reply`, { method: 'POST', body: { message } }, whole),
+    supportClose: (id: string) => call<{ status: string }>(`/support/${id}/close`, { method: 'POST', body: {} }, whole),
     audit: (o: { licenseId?: string; cursor?: string }) => call<{ events: AuditEvent[]; nextCursor: string | null }>(`/audit${qs({ ...o, limit: '25' })}`, {}, whole),
   };
 }

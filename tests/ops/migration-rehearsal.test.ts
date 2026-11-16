@@ -108,9 +108,9 @@ function seedLegacy(raw: InstanceType<typeof DatabaseSync>) {
 
 describe('Migrações 0007 e 0008 sobre dados antigos (banco descartável, dados sintéticos)', () => {
   it.each([
-    ['0001–0006', '0006_prep_minutes.sql', ['0007_catalog_ref.sql', '0008_quote_code.sql', '0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql', '0013_license_trial.sql', '0014_license_holder_name.sql']],
-    ['0001–0007', '0007_catalog_ref.sql', ['0008_quote_code.sql', '0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql', '0013_license_trial.sql', '0014_license_holder_name.sql']],
-    ['0001–0008', '0008_quote_code.sql', ['0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql', '0013_license_trial.sql', '0014_license_holder_name.sql']],
+    ['0001–0006', '0006_prep_minutes.sql', ['0007_catalog_ref.sql', '0008_quote_code.sql', '0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql', '0013_license_trial.sql', '0014_license_holder_name.sql', '0015_support.sql']],
+    ['0001–0007', '0007_catalog_ref.sql', ['0008_quote_code.sql', '0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql', '0013_license_trial.sql', '0014_license_holder_name.sql', '0015_support.sql']],
+    ['0001–0008', '0008_quote_code.sql', ['0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql', '0013_license_trial.sql', '0014_license_holder_name.sql', '0015_support.sql']],
   ])('estágio %s: detecta as aplicadas, simula só as pendentes e nada preexistente muda (mesmas colunas antes e depois)', (_n, upTo, expectedPending) => {
     const db = createTestD1({ upTo }); seedLegacy(db.raw); recordMigrations(db.raw, upTo);
     // Estágios mais novos já têm valores nas colunas que existem: eles precisam sobreviver intactos.
@@ -174,8 +174,8 @@ describe('Migrações 0007 e 0008 sobre dados antigos (banco descartável, dados
   });
 
   it('as migrações do repositório são exatamente as esperadas (nenhuma extra, nenhuma faltando)', () => {
-    expect(readdirSync(MIGRATIONS).filter(f => f.endsWith('.sql')).sort()).toEqual(['0001_quotes.sql', '0002_licenses.sql', '0003_accounts.sql', '0004_data.sql', '0005_payments.sql', '0006_prep_minutes.sql', '0007_catalog_ref.sql', '0008_quote_code.sql', '0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql', '0013_license_trial.sql', '0014_license_holder_name.sql']);
-    for (const f of ['0007_catalog_ref.sql', '0008_quote_code.sql', '0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql', '0013_license_trial.sql', '0014_license_holder_name.sql']) expect(sql(f), f).not.toMatch(/\b(DROP|DELETE|TRUNCATE)\b|UPDATE\s+\w+\s+SET/i);
+    expect(readdirSync(MIGRATIONS).filter(f => f.endsWith('.sql')).sort()).toEqual(['0001_quotes.sql', '0002_licenses.sql', '0003_accounts.sql', '0004_data.sql', '0005_payments.sql', '0006_prep_minutes.sql', '0007_catalog_ref.sql', '0008_quote_code.sql', '0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql', '0013_license_trial.sql', '0014_license_holder_name.sql', '0015_support.sql']);
+    for (const f of ['0007_catalog_ref.sql', '0008_quote_code.sql', '0009_admin.sql', '0010_packagings.sql', '0011_order_packaging_charge.sql', '0012_order_items.sql', '0013_license_trial.sql', '0014_license_holder_name.sql', '0015_support.sql']) expect(sql(f), f).not.toMatch(/\b(DROP|DELETE|TRUNCATE)\b|UPDATE\s+\w+\s+SET/i);
   });
 });
 

@@ -99,6 +99,7 @@ O app é local-first e **funciona inteiro sem conta e sem internet**. Existe um 
 
 - **Visão geral:** saudação pelo nome, indicadores, gráfico **Vendas por mês** (últimos 6 meses, pela data de entrega dos pedidos confirmados; custo e saldo estimados, com tabela) e últimas encomendas. Os **primeiros passos** e a boas-vindas somem quando tudo estiver feito (o backup conta a partir do primeiro download no aparelho).
 - **Ingredientes:** a tela mostra a lista; o formulário abre em "Novo ingrediente" (fica aberto para cadastrar vários) ou em "Editar", pelo botão ⋯ de cada item (Editar / Excluir).
+- **Suporte:** botão no canto inferior direito de todas as telas. Dúvidas são respondidas por um assistente de IA (Workers AI grátis, só com base no manual do app; troca para o Claude por configuração); sugestões, reclamações e o que a IA não resolver vão para a caixa **Suporte** do /admin. Detalhes em [docs/SUPORTE.md](docs/SUPORTE.md).
 - **Agenda em calendário:** grade do mês com a quantidade de entregas por dia (vermelho = atraso, cinza = todas entregues); clicar no dia mostra os pedidos dele, com status e "Ver". Atrasos e carga de produção continuam na mesma tela.
 - **Faixa do período de teste** acima do topo (só em licenças de teste): dias que faltam e atalho para pedir mais tempo ou assinar. O contato fica em `src/support.ts` (`SUPPORT_WHATSAPP`; enquanto for `null`, usa o e-mail).
 - **Capacidade diária** em horas (5, 4,5 ou 4:30), guardada em minutos.

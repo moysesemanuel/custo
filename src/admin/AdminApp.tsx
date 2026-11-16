@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { ArrowLeft, History, KeyRound, LayoutDashboard, LogOut, Mail, ShieldCheck, UserPlus, Users } from 'lucide-react';
+import { ArrowLeft, History, LifeBuoy, KeyRound, LayoutDashboard, LogOut, Mail, ShieldCheck, UserPlus, Users } from 'lucide-react';
 import { API_URL, safeApiBase } from '../account/http';
 import { AUTH_MESSAGES, createAuthClient, type DeviceInfo, type SessionInfo } from '../account/authClient';
 import { Field } from '../components/Field';
@@ -8,6 +8,7 @@ import { BrandPanel } from '../components/BrandPanel';
 import { ADMIN_MESSAGES, createAdminClient, type AdminClient, type AdminFailure, type AuditEvent, type CustomerDetail, type CustomerRow, type Metrics, type Overview } from './adminClient';
 import { AdminCharts } from './AdminCharts';
 import { AdminCapacity } from './AdminCapacity';
+import { SupportPanel } from './AdminSupport';
 import './admin.css';
 import { isTrialOver, TRIAL_DAYS, trialDaysLeft } from '../../shared/trial';
 import { cleanPersonName, PERSON_NAME_MAX } from '../../shared/personName';
@@ -15,7 +16,7 @@ import { cleanPersonName, PERSON_NAME_MAX } from '../../shared/personName';
 const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—');
 const ACTIONS: Record<string, string> = { 'customer.create': 'Cadastro de cliente', 'customer.suspend': 'Suspensão de acesso', 'customer.activate': 'Reativação de acesso', 'customer.trial-extend': 'Teste prorrogado', 'customer.trial-permanent': 'Licença tornada permanente', 'customer.rename': 'Nome alterado', 'customer.email-change': 'E-mail alterado', 'customer.trial-until': 'Prazo da licença alterado', 'session.revoke': 'Sessão revogada', 'session.revoke-all': 'Todas as sessões revogadas', 'admin.grant': 'Acesso administrativo concedido', 'admin.revoke': 'Acesso administrativo revogado' };
 const RESULTS: Record<string, string> = { ok: 'aplicado', noop: 'sem alteração' };
-type View = { name: 'overview' } | { name: 'customers' } | { name: 'customer'; id: string } | { name: 'audit'; licenseId?: string };
+type View = { name: 'overview' } | { name: 'support' } | { name: 'customers' } | { name: 'customer'; id: string } | { name: 'audit'; licenseId?: string };
 
 /** Painel do proprietário. Toda permissão é decidida pelo servidor; esta tela só mostra o que a API devolve. */
 export default function AdminApp({ apiBase }: { apiBase?: string }) {
@@ -87,7 +88,7 @@ function Console({ api, email, onSignOut, notice, setNotice, onExpired }: { api:
   if (allowed === 'checking') return <Shell><p className="muted" role="status">Verificando permissões…</p></Shell>;
   if (allowed === 'network') return <Shell><div className="notice warn" role="alert">{ADMIN_MESSAGES.network}</div><button className="secondary" onClick={() => location.reload()}>Recarregar</button></Shell>;
   if (allowed === 'no') return <Shell><section className="card stack"><div className="notice warn" role="alert"><strong>Acesso negado.</strong> {ADMIN_MESSAGES.forbidden}</div>{notice && <div className="notice warn" role="status">{notice}</div>}<button className="secondary" onClick={onSignOut}><LogOut size={16} /> Sair desta conta</button></section></Shell>;
-  const nav: { id: View['name']; label: string; icon: typeof Users }[] = [{ id: 'overview', label: 'Visão geral', icon: LayoutDashboard }, { id: 'customers', label: 'Clientes', icon: Users }, { id: 'audit', label: 'Histórico', icon: History }];
+  const nav: { id: View['name']; label: string; icon: typeof Users }[] = [{ id: 'overview', label: 'Visão geral', icon: LayoutDashboard }, { id: 'customers', label: 'Clientes', icon: Users }, { id: 'support', label: 'Suporte', icon: LifeBuoy }, { id: 'audit', label: 'Histórico', icon: History }];
   const go = (v: View) => { setNotice(''); setView(v); };
   return <div className="app"><a className="skip-link" href="#admin-main">Pular para o conteúdo</a>
     <aside className="sidebar"><div className="brand"><img className="brand-logo" src="/brand/custo-color.svg" alt="Custô" /></div>
@@ -99,6 +100,7 @@ function Console({ api, email, onSignOut, notice, setNotice, onExpired }: { api:
         {view.name === 'overview' && <OverviewPanel api={api} fail={fail} />}
         {view.name === 'customers' && <CustomersPanel api={api} fail={fail} open={id => go({ name: 'customer', id })} inform={setNotice} />}
         {view.name === 'customer' && <CustomerPanel key={view.id} api={api} id={view.id} fail={fail} inform={setNotice} back={() => go({ name: 'customers' })} history={() => go({ name: 'audit', licenseId: view.id })} />}
+        {view.name === 'support' && <SupportPanel api={api} fail={fail} inform={setNotice} />}
         {view.name === 'audit' && <AuditPanel api={api} fail={fail} licenseId={view.licenseId} />}
       </main></div></div>;
 }

@@ -25,6 +25,7 @@ import { BackupPage } from './pages/BackupPage';
 import { Sidebar } from './components/Sidebar';
 import { AccountMenu } from './components/AccountMenu';
 import { TrialBanner } from './components/TrialBanner';
+import { SupportWidget } from './features/support/SupportWidget';
 import { pathForRoute, routeFromPath } from './appRoutes';
 
 /** Aviso quando a sincronização precisa de uma decisão sua (por exemplo, dados dos dois lados na primeira entrada). */
@@ -168,6 +169,6 @@ export default function App() {
       {page === 'settings' && <SettingsPage {...props} />}
       {page === 'backup' && <BackupPage {...props} replaceData={replaceData} />}</>}
       </>}</ErrorBoundary>
-    </div></main>{!viewer && <ConflictDialog inform={inform} packagings={data.packagings ?? []} />}{feedback && <div className="toast" role="status" aria-live="polite">{feedback}</div>}
+    </div></main>{!viewer && <ConflictDialog inform={inform} packagings={data.packagings ?? []} />}{feedback && <div className="toast" role="status" aria-live="polite">{feedback}</div>}<SupportWidget />
   </div></AccessGate></AccountProvider>;
 }

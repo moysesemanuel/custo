@@ -72,6 +72,15 @@ describe('Painel /admin', () => {
     await u.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Tornar permanente/ }));
     expect(await screen.findByText(/Licença agora é permanente/)).toBeTruthy();
   });
+  it('caixa de suporte: abre a conversa, responde e encerra', async () => {
+    await srv.request('POST', '/api/support', { session: ana, body: { kind: 'complaint', message: 'Não consigo publicar link' } });
+    const u = userEvent.setup(); open(); await u.click(await screen.findByRole('button', { name: /^Suporte$/ }));
+    await u.click(await screen.findByRole('button', { name: 'Abrir conversa de ana@exemplo.com' }));
+    expect(screen.getByText('Não consigo publicar link', { selector: '.msg-body' })).toBeTruthy();
+    await u.type(screen.getByLabelText('Sua resposta'), 'Oi! Já resolvemos.'); await u.click(screen.getByRole('button', { name: /Responder/ }));
+    expect(await screen.findByText(/Resposta enviada/)).toBeTruthy();
+    expect(srv.table('support_messages').some(m => m.author === 'team' && m.body === 'Oi! Já resolvemos.')).toBe(true);
+  });
   it('mostra e altera o nome da pessoa na ficha (registrado no histórico)', async () => {
     const u = userEvent.setup(); open(); await toDetail(u, 'ana@exemplo.com');
     expect(screen.getByText('não informado')).toBeTruthy();

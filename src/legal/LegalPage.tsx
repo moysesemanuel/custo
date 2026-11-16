@@ -23,6 +23,7 @@ function Privacy() {
       <li><strong>Login:</strong> o código enviado por e-mail é guardado só como resumo criptográfico (hash), com validade de 10 minutos e uso único.</li>
       <li><strong>Seus dados de trabalho:</strong> ingredientes, receitas, embalagens, encomendas (incluindo o nome que você informar para cada cliente), recebimentos e observações, e as configurações do negócio (nome e telefone, usados nos orçamentos).</li>
       <li><strong>Orçamentos publicados por link:</strong> o que você decidir mostrar ao cliente final (nome do negócio, telefone, produtos, valores, validade e observações). Custos internos, margens e dados do seu cliente não são publicados.</li>
+      <li><strong>Suporte:</strong> as mensagens que você enviar pelo botão de suporte (dúvidas, sugestões e reclamações) e as respostas, guardadas para atendimento. Dúvidas podem ser respondidas por um assistente de inteligência artificial, que recebe só o texto da mensagem, sem seus dados de receitas, pedidos ou clientes.</li>
       <li><strong>Proteção contra abuso:</strong> contadores temporários de tentativas, identificados por resumos criptográficos do e-mail e do endereço IP (o IP não é guardado em texto).</li>
       <li><strong>No seu aparelho:</strong> uma cópia dos seus dados fica no armazenamento do navegador (IndexedDB) para funcionar sem internet.</li>
     </ul>
@@ -35,7 +36,7 @@ function Privacy() {
     <p>O Custô atua como operador desses dados quando realiza o tratamento em nome dos estabelecimentos, de acordo com as funcionalidades contratadas e as instruções aplicáveis.</p>
     <p>O Custô permanece responsável pelos tratamentos em que atua como controlador, incluindo a gestão de suas próprias contas e a segurança operacional da plataforma.</p>
     <h2>5. Com quem compartilhamos e transferência internacional</h2>
-    <p>O Custô utiliza fornecedores tecnológicos para hospedagem, armazenamento, processamento e envio de mensagens transacionais, incluindo Cloudflare e Resend.</p>
+    <p>O Custô utiliza fornecedores tecnológicos para hospedagem, armazenamento, processamento e envio de mensagens transacionais, incluindo Cloudflare (que também executa o assistente de inteligência artificial do suporte) e Resend.</p>
     <p>A utilização desses serviços poderá envolver tratamento de dados pessoais fora do Brasil ou transferência internacional de dados, conforme a infraestrutura e as operações efetivamente utilizadas.</p>
     <p>Quando houver transferência internacional, ela deverá observar os requisitos da Lei Geral de Proteção de Dados Pessoais (LGPD) e os mecanismos legais aplicáveis.</p>
     <p>O Custô adotará medidas contratuais, técnicas e organizacionais adequadas para proteger os dados pessoais tratados por seus fornecedores.</p>
