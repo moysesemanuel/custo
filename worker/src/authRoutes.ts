@@ -17,9 +17,9 @@ export type AuthDeps = { now: () => Date; email: (env: AuthEnv) => EmailSender }
 export const LOGIN_LIMITS = { requestPerEmail: 5, requestPerIp: 30, verifyPerEmail: 15, verifyPerIp: 60 } as const;
 const HOUR = 3600;
 const DAY = 86_400;
-const GLOBAL_EMAIL_KEY = 'global';
-const EMAIL_BUDGET_SCOPE = 'email-send-day';
-const emailDailyLimit = (env: AuthEnv) => { const n = Number(env.EMAIL_DAILY_LIMIT); return Number.isInteger(n) && n >= 1 && n <= EMAIL_DAILY_LIMIT_MAX ? n : EMAIL_DAILY_LIMIT_DEFAULT; };
+export const GLOBAL_EMAIL_KEY = 'global';
+export const EMAIL_BUDGET_SCOPE = 'email-send-day';
+export const emailDailyLimit = (env: AuthEnv) => { const n = Number(env.EMAIL_DAILY_LIMIT); return Number.isInteger(n) && n >= 1 && n <= EMAIL_DAILY_LIMIT_MAX ? n : EMAIL_DAILY_LIMIT_DEFAULT; };
 const budgetExhausted = (retryAfterSeconds: number) => apiError(503, 'EMAIL_DAILY_BUDGET', 'O envio de códigos de acesso atingiu o limite de hoje. Tente novamente amanhã ou fale com o suporte.', { 'Retry-After': String(retryAfterSeconds) });
 const ID_SESSION = /^ses_[0-9a-f]{16}$/;
 

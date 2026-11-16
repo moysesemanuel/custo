@@ -5,7 +5,8 @@ import { generateLicenseId, generateLicenseKey, hashLicenseKey, LICENSE_ID_PATTE
 import { LABEL_PATTERN } from './licenseAdmin';
 import { cleanPersonName, PERSON_NAME_MAX } from '../../shared/personName';
 import { checkCsrf, resolveSession, type SessionEnv } from './session';
-import { consumeRateLimit } from './store';
+import { consumeRateLimit, windowCount } from './store';
+import { EMAIL_BUDGET_SCOPE, emailDailyLimit, GLOBAL_EMAIL_KEY } from './authRoutes';
 
 export type AdminDeps = { now: () => Date };
 export const ADMIN_RATE = { readPerMinute: 120, writePerMinute: 30 } as const;
@@ -80,6 +81,8 @@ export async function adminRoute(request: Request, env: SessionEnv, deps: AdminD
       weeks: starts.map((start, i) => ({ start, signups: signups[i], firstLogins: firstLogins[i], quotes: quotes[i], orders: orders[i] })),
       activeUsers: { d1: n(m.activity?.d1), d7: n(m.activity?.d7), d30: n(m.activity?.d30) },
       licenses: { permanent: n(m.status?.permanent), trialRunning: n(m.status?.trial_running), trialEnding: n(m.status?.trial_ending), trialEnded: n(m.status?.trial_ended), trialNotStarted: n(m.status?.trial_not_started), suspended: n(m.status?.suspended) },
+      // Uso real que o próprio banco registra: e-mails de login enviados hoje (o contador que segura a cota do Resend).
+      email: { today: await windowCount(env.DB, GLOBAL_EMAIL_KEY, EMAIL_BUDGET_SCOPE, 86_400, Date.parse(iso)), dailyLimit: emailDailyLimit(env as Parameters<typeof emailDailyLimit>[0]) },
       funnel: { registered: n(m.funnel?.registered), loggedIn: n(m.funnel?.logged_in), withOrders: n(m.funnel?.with_orders), active7d: n(m.funnel?.active_7d) },
     });
   }

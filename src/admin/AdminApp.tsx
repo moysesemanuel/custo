@@ -7,6 +7,7 @@ import { Modal } from '../components/Modal';
 import { BrandPanel } from '../components/BrandPanel';
 import { ADMIN_MESSAGES, createAdminClient, type AdminClient, type AdminFailure, type AuditEvent, type CustomerDetail, type CustomerRow, type Metrics, type Overview } from './adminClient';
 import { AdminCharts } from './AdminCharts';
+import { AdminCapacity } from './AdminCapacity';
 import './admin.css';
 import { isTrialOver, TRIAL_DAYS, trialDaysLeft } from '../../shared/trial';
 import { cleanPersonName, PERSON_NAME_MAX } from '../../shared/personName';
@@ -126,6 +127,7 @@ function OverviewPanel({ api, fail }: { api: AdminClient; fail: (r: AdminFailure
   return <><Head title="Visão geral" hint="Contagens reais do banco, atualizadas quando você abre ou pede."><button className="secondary" onClick={() => void load()} disabled={busy}>{busy ? 'Atualizando…' : 'Atualizar'}</button></Head>
     {err && <div className="notice error" role="alert">{err}</div>}
     {o && <><div className="admin-metrics">{cards.map(([label, v, hint]) => <div key={label} className="card metric-card"><span className="metric-label">{label}</span><span className="metric">{v ?? '—'}</span><small>{hint}</small></div>)}</div>
+      {m && <AdminCapacity m={m} />}
       {m && <AdminCharts m={m} />}
       <p className="footnote">Gerado em {when(o.generatedAt)}. O painel mostra só contagens: quantos pedidos e links cada semana teve, nunca o conteúdo (clientes, valores, receitas ou ingredientes).</p></>}
     {!o && !err && <p className="muted" role="status">Carregando…</p>}</>;

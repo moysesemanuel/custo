@@ -131,3 +131,8 @@ Verificação adicional por código de e-mail para ações sensíveis (gasta cot
 ## Visão geral com métricas (`GET /api/admin/metrics`)
 
 Gráficos (biblioteca `recharts`, só no painel): novos clientes por semana (cadastros × primeiro acesso), uso do app por semana (pedidos registrados × links publicados), situação das licenças e "do cadastro ao uso" (cadastrados → já entraram → com pedido → usaram em 7 dias); cartões com ativos hoje/7/30 dias e testes vencendo. São **só contagens**: o painel conta quantos pedidos e links foram criados por semana, sem ler nome de cliente, valores, receitas nem ingredientes. Consulta agrupada por dia nas últimas 12 semanas (semanas de segunda a domingo, UTC), executada só quando um administrador abre a tela.
+
+### Plano gratuito e Pagamentos
+
+- **Plano gratuito:** contas que usaram o app nos últimos 7 dias contra a meta de contas para continuar sem custo (`shared/capacity.ts`: 64 no cenário de uso intenso, com metade da cota de reserva; ~201 no típico — vêm de `npm run costs`, atualize o arquivo quando medir de novo). Faixas da política de custos: meta = 50% da cota; alerta em 60% (1,2× a meta) e ação em 80% (1,6×). Mostra também os e-mails de login enviados hoje contra o limite do app (`EMAIL_DAILY_LIMIT`, padrão 80). Números oficiais: painéis da Cloudflare e do Resend.
+- **Pagamentos:** espaço reservado ("Em breve") para assinantes, receita do mês e pagamentos, ao lado dos planos pagos de referência (Cloudflare Workers Paid, Resend Pro). Será preenchido quando a venda de planos existir.

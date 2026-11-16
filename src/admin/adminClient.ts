@@ -19,7 +19,8 @@ export type Overview = { generatedAt: string; customers: { total: number; active
 export type Metrics = { generatedAt: string; weeks: { start: string; signups: number; firstLogins: number; quotes: number; orders: number }[];
   activeUsers: { d1: number; d7: number; d30: number };
   licenses: { permanent: number; trialRunning: number; trialEnding: number; trialEnded: number; trialNotStarted: number; suspended: number };
-  funnel: { registered: number; loggedIn: number; withOrders: number; active7d: number } };
+  funnel: { registered: number; loggedIn: number; withOrders: number; active7d: number };
+  email: { today: number; dailyLimit: number } };
 export type CustomerRow = { id: string; email: string; label: string | null; name: string | null; status: 'active' | 'revoked'; createdAt: string; suspendedAt: string | null; accountId: string | null; lastAccessAt: string | null; isAdmin: boolean; activeSessions: number;
   /** Teste: dias (null = sem prazo) e fim (null enquanto o cliente não fez o primeiro acesso). */
   trialDays: number | null; trialEndsAt: string | null };

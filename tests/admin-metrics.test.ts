@@ -9,7 +9,7 @@ beforeEach(async () => {
   const userId = (srv.db.raw.prepare("SELECT id FROM users WHERE email = 'dono@exemplo.com'").get() as { id: string }).id;
   srv.db.raw.prepare("INSERT INTO admins (user_id, role, granted_at, granted_by) VALUES (?, 'owner', '2026-11-16T12:00:00.000Z', 'cli')").run(userId);
 });
-type M = { weeks: { start: string; signups: number; firstLogins: number; quotes: number; orders: number }[]; activeUsers: { d1: number; d7: number; d30: number }; licenses: Record<string, number>; funnel: Record<string, number> };
+type M = { email: { today: number; dailyLimit: number }; weeks: { start: string; signups: number; firstLogins: number; quotes: number; orders: number }[]; activeUsers: { d1: number; d7: number; d30: number }; licenses: Record<string, number>; funnel: Record<string, number> };
 const get = async () => (await srv.request('GET', '/api/admin/metrics', { session: admin })).json() as Promise<M>;
 
 describe('métricas do painel', () => {
@@ -26,9 +26,15 @@ describe('métricas do painel', () => {
     expect(m.licenses).toEqual({ permanent: 2, trialRunning: 0, trialEnding: 1, trialEnded: 1, trialNotStarted: 1, suspended: 1 });
     expect(m.funnel).toMatchObject({ registered: 6, loggedIn: 2, active7d: 2 });
     expect(m.activeUsers).toEqual({ d1: 2, d7: 2, d30: 2 });
+    expect(m.email).toEqual({ today: srv.mail.outbox.length, dailyLimit: 80 }); // e-mails de login enviados hoje (contador da cota)
   });
   it('só para administradores', async () => {
     await srv.issueFor('ana@exemplo.com'); const ana = await srv.login('ana@exemplo.com');
     expect((await srv.request('GET', '/api/admin/metrics', { session: ana })).status).toBe(403);
+  });
+
+  it('faixas da meta do plano gratuito (50% da cota = meta; alerta em 60%, ação em 80%)', async () => {
+    const { capacityLevel } = await import('../shared/capacity');
+    expect([0, 63, 64, 76, 77, 102, 103].map(n => capacityLevel(n, 64))).toEqual(['ok', 'ok', 'above-goal', 'above-goal', 'alert', 'alert', 'action']);
   });
 });

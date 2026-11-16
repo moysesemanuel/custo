@@ -35,6 +35,8 @@ describe('Painel /admin', () => {
     expect((await card('Usaram nos últimos 7 dias')).textContent).toMatch(/^Usaram nos últimos 7 dias2/);
     expect(await screen.findByRole('region', { name: 'Novos clientes por semana' })).toBeTruthy();
     expect(screen.getByRole('region', { name: 'Situação das licenças' })).toBeTruthy();
+    const free = screen.getByRole('region', { name: 'Plano gratuito' }); expect(free.textContent).toMatch(/2 de 64 contas ativas/); expect(free.textContent).toMatch(/Dentro da meta/);
+    expect(screen.getByRole('region', { name: 'Pagamentos' }).textContent).toMatch(/ainda não está ativa/);
     expect(screen.getByText(/só contagens/i)).toBeTruthy();
   });
   it('cadastra cliente (sem enviar e-mail), mostra os detalhes e é idempotente', async () => {
