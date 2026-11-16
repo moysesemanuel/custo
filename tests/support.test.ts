@@ -130,3 +130,19 @@ describe('trocar a IA pelo Claude (só configuração)', () => {
   });
 });
 
+describe('resposta sem cumprimento duplicado', () => {
+  it('remove "Olá!", "Oi, tudo bem?" e afins do começo da resposta da IA', async () => {
+    const { stripGreeting } = await import('../worker/src/supportAi');
+    expect(stripGreeting('Olá! Para utilizar o conversor, siga estes passos:\n\n1. Acesse')).toBe('Para utilizar o conversor, siga estes passos:\n\n1. Acesse');
+    expect(stripGreeting('Oi, tudo bem? Claro! Para cadastrar...')).toBe('Para cadastrar...');
+    expect(stripGreeting('Olá, Lana! Vou te ajudar com sua dúvida.\n\nClique em "Cadastrar".')).toBe('Clique em "Cadastrar".');
+    expect(stripGreeting('Para começar, clique em "Novo ingrediente".')).toBe('Para começar, clique em "Novo ingrediente".');
+    expect(stripGreeting('Boa noite! Bom, o backup fica em Backup.')).toBe('Bom, o backup fica em Backup.');
+  });
+  it('na conversa, sai uma saudação só', async () => {
+    aiReply = 'Olá! Para utilizar o conversor, abra Conversor no menu.';
+    const t = await ticketOf(await send({ kind: 'question', message: 'Como uso o conversor?' }));
+    expect(t.messages[1].body).toBe('Olá! Vou te ajudar com sua dúvida.\n\nPara utilizar o conversor, abra Conversor no menu.');
+  });
+});
+

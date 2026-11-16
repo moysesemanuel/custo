@@ -29,8 +29,12 @@ function chat(turns: Turn[]): { role: 'user' | 'assistant'; content: string }[] 
   return out;
 }
 
+/** Cumprimento no começo da resposta (a saudação com o nome já vem do servidor): "Olá!", "Oi, tudo bem?", "Bom dia! Claro!"... */
+const LEADING_GREETING = /^(?:(?:olá|ola|oi|bom dia|boa tarde|boa noite)(?=[\s,!.?])[^\n.!?]{0,40}[!.?,]?\s*)+(?:(?:claro|com certeza|certo|vamos lá|tudo bem)[!.,]?\s*)?/i;
+export const stripGreeting = (text: string) => text.replace(LEADING_GREETING, '').replace(/^\s*vou te ajudar[^\n.!]*[.!]\s*/i, '').trim();
+
 const clean = (text: string): AiAnswer => {
-  const t = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+  const t = stripGreeting(text.replace(/<think>[\s\S]*?<\/think>/g, '').trim());
   if (!t || t.includes(SUPPORT_HANDOFF)) return { kind: 'handoff' };
   return { kind: 'answer', text: t.slice(0, 3500) };
 };
