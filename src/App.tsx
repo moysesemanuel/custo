@@ -24,6 +24,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { BackupPage } from './pages/BackupPage';
 import { Sidebar } from './components/Sidebar';
 import { AccountMenu } from './components/AccountMenu';
+import { TrialBanner } from './components/TrialBanner';
 import { pathForRoute, routeFromPath } from './appRoutes';
 
 /** Aviso quando a sincronização precisa de uma decisão sua (por exemplo, dados dos dois lados na primeira entrada). */
@@ -149,7 +150,7 @@ export default function App() {
 
   return <AccountProvider data={data} setData={setData} ready={ready && eff === 'editor'} epoch={epoch} metaVersion={metaVersion}><AccessGate data={data}><div className="app"><a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
     <Sidebar activePage={page === 'order-detail' ? 'orders' : page} onNavigate={focus} account={<AccountMenu focus={focus} inform={inform} className="account-menu-mobile" />} />
-    <main className="workspace"><header className="topbar"><strong>Seu espaço de trabalho</strong><TopbarStatus /><AccountMenu focus={focus} inform={inform} /></header><div className="content" id="conteudo">
+    <main className="workspace"><TrialBanner /><header className="topbar"><strong>Seu espaço de trabalho</strong><TopbarStatus /><AccountMenu focus={focus} inform={inform} /></header><div className="content" id="conteudo">
       {blocked ? <LostWorkBanner onDownload={() => downloadBackup(blocked)} onReload={() => { void reload.current('reset'); }} /> : viewer && <ViewerBanner canTakeOver={coordinator.supported} onTakeOver={() => coordinator.takeOver()} />}
       {!viewer && <SyncBanner focus={focus} />}
       {!viewer && <ConflictBanner />}

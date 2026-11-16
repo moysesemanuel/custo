@@ -10,13 +10,13 @@ const json = (status: number, body: unknown) => new Response(JSON.stringify(body
 const memory = new Map<string, string>();
 let loggedOut = false;
 
-async function boot(holderName: string | null) {
+async function boot(holderName: string | null, expiresAt: string | null = null) {
   memory.clear(); loggedOut = false;
   vi.stubGlobal('localStorage', { getItem: (k: string) => memory.get(k) ?? null, setItem: (k: string, v: string) => void memory.set(k, v), removeItem: (k: string) => void memory.delete(k), clear: () => memory.clear() });
   await resetStorage();
   vi.stubGlobal('fetch', vi.fn(async (url: string) => {
     const path = url.replace(BASE, '');
-    if (path === '/api/auth/session') return loggedOut ? json(401, { error: 'UNAUTHORIZED' }) : json(200, { user: { id: 'usr_1', email: 'lana@exemplo.com' }, csrfToken: 'csrf', sessionId: 'ses_aaaaaaaaaaaaaaaa', license: { status: 'active', quotaActive: 100, quotaDaily: 30, expiresAt: null, holderName } });
+    if (path === '/api/auth/session') return loggedOut ? json(401, { error: 'UNAUTHORIZED' }) : json(200, { user: { id: 'usr_1', email: 'lana@exemplo.com' }, csrfToken: 'csrf', sessionId: 'ses_aaaaaaaaaaaaaaaa', license: { status: 'active', quotaActive: 100, quotaDaily: 30, expiresAt, holderName } });
     if (path === '/api/auth/logout') { loggedOut = true; return json(200, { ok: true }); }
     if (path === '/api/sessions') return json(200, { maxSessions: 2, sessions: [] });
     if (path.startsWith('/api/sync/v2')) return json(200, { revision: 0, changes: { ingredients: [], recipes: [], orders: [], packagings: [] }, deleted: { ingredients: [], recipes: [], orders: [], packagings: [] } });
@@ -65,5 +65,18 @@ describe('saudação e menu da conta', () => {
     await u.click(screen.getAllByRole('button', { name: 'Menu da conta' })[0]);
     await u.click(screen.getByRole('menuitem', { name: 'Configurações' }));
     expect(await screen.findByRole('heading', { level: 1, name: 'Configurações' })).toBeTruthy();
+  });
+
+  it('em teste, a faixa do topo mostra os dias que faltam e o contato (sem dados da pessoa no link); sem prazo, não aparece', async () => {
+    await boot('Lana Costa', new Date(Date.now() + 5 * 86_400_000 - 60_000).toISOString());
+    const banner = await screen.findByText(/Faltam 5 dias do seu teste grátis/);
+    const link = within(banner.closest('.trial-banner') as HTMLElement).getByRole('link');
+    expect(link.getAttribute('href')).toMatch(/^mailto:contato@dabitech\.com\.br/);
+    expect(link.getAttribute('href')).not.toMatch(/lana/i);
+  });
+  it('licença sem prazo: sem faixa de teste', async () => {
+    await boot('Lana Costa', null);
+    await screen.findByRole('heading', { level: 1 });
+    expect(screen.queryByText(/do seu teste grátis/)).toBeNull();
   });
 });

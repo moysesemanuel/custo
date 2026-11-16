@@ -129,3 +129,25 @@ export function parseHours(text: string): number | undefined | null {
 
 /** Minutos → texto para o campo em horas: 300 → "5", 270 → "4:30", 5 → "0:05". */
 export const minutesToHoursInput = (m: number): string => (m % 60 === 0 ? String(m / 60) : `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`);
+
+export const MONTH_NAMES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+/**
+ * Grade do calendário de um mês (`month` = AAAA-MM): semanas de domingo a sábado, com os dias do mês anterior/seguinte
+ * para completar as linhas (`inMonth` = false).
+ */
+export function monthGrid(month: string): { date: string; inMonth: boolean }[][] {
+  const first = `${month}-01`;
+  const start = addDays(first, -weekdayOf(first));
+  const weeks: { date: string; inMonth: boolean }[][] = [];
+  for (let d = start; weeks.length < 6; ) {
+    const week = Array.from({ length: 7 }, (_, i) => { const date = addDays(d, i); return { date, inMonth: date.startsWith(month) }; });
+    if (weeks.length >= 4 && !week.some(x => x.inMonth)) break;
+    weeks.push(week); d = addDays(d, 7);
+  }
+  return weeks;
+}
+/** Mês anterior/seguinte (AAAA-MM). */
+export function shiftMonth(month: string, n: number): string {
+  const [y, m] = month.split('-').map(Number); const d = new Date(Date.UTC(y, m - 1 + n, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}

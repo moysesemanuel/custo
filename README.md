@@ -99,6 +99,8 @@ O app é local-first e **funciona inteiro sem conta e sem internet**. Existe um 
 
 - **Visão geral:** saudação pelo nome, indicadores, gráfico **Vendas por mês** (últimos 6 meses, pela data de entrega dos pedidos confirmados; custo e saldo estimados, com tabela) e últimas encomendas. Os **primeiros passos** e a boas-vindas somem quando tudo estiver feito (o backup conta a partir do primeiro download no aparelho).
 - **Ingredientes:** a tela mostra a lista; o formulário abre em "Novo ingrediente" (fica aberto para cadastrar vários) ou em "Editar", pelo botão ⋯ de cada item (Editar / Excluir).
+- **Agenda em calendário:** grade do mês com a quantidade de entregas por dia (vermelho = atraso, cinza = todas entregues); clicar no dia mostra os pedidos dele, com status e "Ver". Atrasos e carga de produção continuam na mesma tela.
+- **Faixa do período de teste** acima do topo (só em licenças de teste): dias que faltam e atalho para pedir mais tempo ou assinar. O contato fica em `src/support.ts` (`SUPPORT_WHATSAPP`; enquanto for `null`, usa o e-mail).
 - **Capacidade diária** em horas (5, 4,5 ou 4:30), guardada em minutos.
 - **Menu da conta** (ícone de perfil no topo; no celular, no cabeçalho): nome e e-mail de quem está conectado, atalho para Configurações e **Sair**. A Visão geral cumprimenta a pessoa pelo nome cadastrado no painel administrativo.
 - **Conta** (Configurações): login sem senha por código de 8 dígitos enviado ao e-mail da compra, até **2 dispositivos** (o terceiro pode substituir um dos antigos), remoção de dispositivos e sessão em cookie `HttpOnly` com proteção CSRF.
