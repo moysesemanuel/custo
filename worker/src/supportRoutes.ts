@@ -94,9 +94,10 @@ export async function supportRoute(request: Request, env: SupportEnv, deps: Deps
     const text = cleanBody(b.message);
     if (!kind || !text) return apiError(400, 'INVALID_REQUEST', `Escreva a mensagem (até ${SUPPORT_LIMITS.bodyMax} caracteres).`);
     const id = ticketId();
-    const previous = await env.DB.prepare('SELECT COUNT(*) AS n FROM support_tickets WHERE user_id = ?1').bind(a.userId).first<{ n: number }>();
+    // Alterna entre todos os clientes: lê só a última conversa criada (1 linha).
+    const last = await env.DB.prepare('SELECT assistant FROM support_tickets ORDER BY rowid DESC LIMIT 1').bind().first<{ assistant: string | null }>();
     await env.DB.batch([
-      env.DB.prepare("INSERT INTO support_tickets (id, user_id, kind, status, created_at, updated_at, unread_for_user, assistant) VALUES (?1, ?2, ?3, 'open', ?4, ?4, 0, ?5)").bind(id, a.userId, kind, iso, nextAssistant(previous?.n ?? 0)),
+      env.DB.prepare("INSERT INTO support_tickets (id, user_id, kind, status, created_at, updated_at, unread_for_user, assistant) VALUES (?1, ?2, ?3, 'open', ?4, ?4, 0, ?5)").bind(id, a.userId, kind, iso, nextAssistant(last ? (last.assistant ?? 'bianca') : null)),
       env.DB.prepare("INSERT INTO support_messages (id, ticket_id, author, body, created_at) VALUES (?1, ?2, 'user', ?3, ?4)").bind(messageId(), id, text, iso),
     ]);
     if (kind === 'question') await answerWithAi(env, id, [{ author: 'user', body: text }], now, a.firstName);

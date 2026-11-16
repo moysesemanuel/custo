@@ -49,12 +49,12 @@ describe('suporte do cliente', () => {
     expect(t.status).toBe('open'); expect(aiCalls).toHaveLength(2); // a 3ª nem chegou à IA
   });
 
-  it('as conversas de cada cliente alternam entre Bianca e Davi, e cada uma mantém o seu', async () => {
+  it('as conversas novas alternam entre Bianca e Davi entre todos os clientes, e cada uma mantém o seu', async () => {
     const kinds = [];
     for (let i = 0; i < 3; i++) kinds.push((await ticketOf(await send({ kind: 'suggestion', message: `ideia ${i}` }))).assistant);
     expect(kinds).toEqual(['bianca', 'davi', 'bianca']);
-    const first = await ticketOf(await send({ kind: 'question', message: 'dúvida' }, admin)); // outro cliente começa pela Bianca
-    expect(first.assistant).toBe('bianca');
+    const other = await ticketOf(await send({ kind: 'question', message: 'dúvida' }, admin)); // outro cliente segue a vez: Davi
+    expect(other.assistant).toBe('davi');
     const list = await (await srv.request('GET', '/api/support', { session: ana })).json() as { tickets: Ticket[] };
     expect(list.tickets.map(t => t.assistant)).toEqual(['bianca', 'davi', 'bianca']); // mais recente primeiro
   });

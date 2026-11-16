@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Send, UserRound } from 'lucide-react';
 import { ASSISTANTS, assistantOf } from '../../shared/supportPersona';
+import { usePolling } from '../usePolling';
 import { ADMIN_MESSAGES, type AdminClient, type AdminFailure, type SupportInboxTicket } from './adminClient';
 
 const KIND: Record<SupportInboxTicket['kind'], [string, string]> = { question: ['Dúvida', 'tag'], suggestion: ['Sugestão', 'tag green'], complaint: ['Reclamação', 'tag red'] };
@@ -14,6 +15,8 @@ export function SupportPanel({ api, fail, inform }: { api: AdminClient; fail: (r
   const [err, setErr] = useState(''); const [selected, setSelected] = useState<string | null>(null);
   const load = useCallback(async () => { const r = await api.support(filter); if (r.ok) { setData(r.value); setErr(''); } else { setErr(ADMIN_MESSAGES[r.reason]); fail(r.reason); } }, [api, filter, fail]);
   useEffect(() => { void load(); }, [load]);
+  // Mensagens novas dos clientes aparecem sozinhas (a cada 20 s, só com a aba visível).
+  usePolling(() => { void load(); }, 20_000);
   const t = data?.tickets.find(x => x.id === selected);
   return <>
     <div className="head"><div><h1>Suporte</h1><p className="muted">Dúvidas, sugestões e reclamações enviadas pelo botão de suporte do app. Dúvidas passam antes pela Bianca ou pelo Davi, os assistentes de IA.</p></div>

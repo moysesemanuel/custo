@@ -4,6 +4,7 @@ import { useAccount } from '../../account/AccountContext';
 import type { SupportKind, SupportTicket } from './supportClient';
 import { SUPPORT_EMAIL } from '../../support';
 import { ASSISTANTS, assistantOf } from '../../../shared/supportPersona';
+import { usePolling } from '../../usePolling';
 
 const KIND_LABEL: Record<SupportKind, string> = { question: 'Dúvida', suggestion: 'Sugestão', complaint: 'Reclamação' };
 const STATUS_LABEL: Record<SupportTicket['status'], string> = { open: 'Aguardando a equipe', answered: 'Respondida', closed: 'Encerrada' };
@@ -23,14 +24,21 @@ export function SupportWidget() {
   const trigger = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
 
+  // Conta as alterações locais: uma leitura que começou antes de um envio não sobrescreve a conversa já atualizada.
+  const edits = useRef(0);
   const load = useCallback(async () => {
     if (!client) return;
+    const before = edits.current;
     const r = await client.list();
+    if (edits.current !== before) return;
     if (r.ok) { setTickets(r.value); setErr(''); } else setErr(r.message);
   }, [client]);
-  // Uma leitura ao entrar (para o aviso de resposta nova); depois só quando o painel abre.
+  // Uma leitura ao entrar (para o aviso de resposta nova) e outra quando o painel abre.
   useEffect(() => { if (signedIn) void load(); }, [signedIn, load]);
   useEffect(() => { if (open && signedIn) void load(); }, [open, signedIn, load]);
+  // Respostas da equipe chegam sozinhas: a cada 15 s com o painel aberto; fechado, a cada 1 min só se houver conversa aguardando a equipe.
+  const waitingTeam = tickets?.some(t => t.status === 'open') ?? false;
+  usePolling(() => { void load(); }, !signedIn ? null : open ? 15_000 : waitingTeam ? 60_000 : null);
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); trigger.current?.focus(); } };
@@ -40,7 +48,7 @@ export function SupportWidget() {
   }, [open, view]);
 
   const unread = tickets?.filter(t => t.unread).length ?? 0;
-  const put = (t: SupportTicket) => setTickets(list => [t, ...(list ?? []).filter(x => x.id !== t.id)]);
+  const put = (t: SupportTicket) => { edits.current += 1; setTickets(list => [t, ...(list ?? []).filter(x => x.id !== t.id)]); };
   const current = view.name === 'thread' ? tickets?.find(t => t.id === view.id) : undefined;
   useEffect(() => {
     if (current?.unread && client) { void client.markRead(current.id); setTickets(list => list?.map(t => (t.id === current.id ? { ...t, unread: false } : t)) ?? null); }

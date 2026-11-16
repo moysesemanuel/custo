@@ -1,7 +1,7 @@
 # Suporte (botão no app + caixa no /admin)
 
-- **Cliente:** botão laranja no canto inferior direito de todas as telas do app. Tipos: **Dúvida** (passa pelo assistente de IA), **Sugestão** e **Reclamação** (vão direto para a equipe). A conversa continua no mesmo painel; resposta da equipe aparece como "Resposta nova". Depois de uma resposta da IA, "Ainda preciso de ajuda" encaminha para a equipe.
-- **Equipe:** `/admin` → **Suporte**. Filtro "Aguardando você" (status `open`) ou todas; abre a conversa (com o que a IA respondeu), responde e encerra.
+- **Cliente:** botão laranja no canto inferior direito de todas as telas do app. Tipos: **Dúvida** (passa pelo assistente de IA), **Sugestão** e **Reclamação** (vão direto para a equipe). A conversa continua no mesmo painel; resposta da equipe aparece como "Resposta nova" sem recarregar a página (o app consulta a cada 15 s com o painel aberto e a cada 1 min com ele fechado, só se houver conversa aguardando a equipe e só com a aba visível). As dúvidas são respondidas pela Bianca ou pelo Davi: cada conversa nova fica com quem não atendeu a anterior (entre todos os clientes) e mantém o mesmo assistente até o fim (migração 0016). Depois de uma resposta da IA, "Ainda preciso de ajuda" encaminha para a equipe.
+- **Equipe:** `/admin` → **Suporte**. Filtro "Aguardando você" (status `open`) ou todas; abre a conversa (com o que a IA respondeu), responde e encerra. A lista se atualiza sozinha a cada 20 s enquanto a aba está visível.
 - **Dados:** tabelas `support_tickets` e `support_messages` (migração 0015). Mensagens até 2.000 caracteres; 20 mensagens por pessoa por dia.
 
 ## Assistente de IA
