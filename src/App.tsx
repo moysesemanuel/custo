@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { UserRound } from 'lucide-react';
 import type { DataSet } from './domain/types';
 import { emptyData, loadDataVersioned, readDataVersion, saveDataCas, StaleWriteError } from './storage/db';
 import { createCoordinator, type Role } from './storage/coordination';
@@ -24,6 +23,7 @@ import { ConverterPage } from './pages/ConverterPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { BackupPage } from './pages/BackupPage';
 import { Sidebar } from './components/Sidebar';
+import { AccountMenu } from './components/AccountMenu';
 import { pathForRoute, routeFromPath } from './appRoutes';
 
 /** Aviso quando a sincronização precisa de uma decisão sua (por exemplo, dados dos dois lados na primeira entrada). */
@@ -148,8 +148,8 @@ export default function App() {
   const viewer = eff === 'viewer';
 
   return <AccountProvider data={data} setData={setData} ready={ready && eff === 'editor'} epoch={epoch} metaVersion={metaVersion}><AccessGate data={data}><div className="app"><a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
-    <Sidebar activePage={page === 'order-detail' ? 'orders' : page} onNavigate={focus} />
-    <main className="workspace"><header className="topbar"><strong>Seu espaço de trabalho</strong><TopbarStatus /><div className="avatar"><UserRound size={16} aria-hidden="true" /></div></header><div className="content" id="conteudo">
+    <Sidebar activePage={page === 'order-detail' ? 'orders' : page} onNavigate={focus} account={<AccountMenu focus={focus} inform={inform} className="account-menu-mobile" />} />
+    <main className="workspace"><header className="topbar"><strong>Seu espaço de trabalho</strong><TopbarStatus /><AccountMenu focus={focus} inform={inform} /></header><div className="content" id="conteudo">
       {blocked ? <LostWorkBanner onDownload={() => downloadBackup(blocked)} onReload={() => { void reload.current('reset'); }} /> : viewer && <ViewerBanner canTakeOver={coordinator.supported} onTakeOver={() => coordinator.takeOver()} />}
       {!viewer && <SyncBanner focus={focus} />}
       {!viewer && <ConflictBanner />}

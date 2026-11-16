@@ -1,7 +1,7 @@
 import { apiCall, field } from './http';
 
 /** `expired` = período de teste encerrado (o app bloqueia a interface; só o backup do aparelho fica disponível). */
-export type LicenseInfo = { status: 'active' | 'revoked' | 'expired'; quotaActive: number; quotaDaily: number; expiresAt?: string | null };
+export type LicenseInfo = { status: 'active' | 'revoked' | 'expired'; quotaActive: number; quotaDaily: number; expiresAt?: string | null; holderName?: string | null };
 export type SessionInfo = { user: { id: string; email: string }; csrfToken: string; sessionId: string; license: LicenseInfo | null };
 export type DeviceInfo = { id: string; deviceLabel: string | null; createdAt: string; lastSeenAt: string; current?: boolean };
 export type AuthFailure = 'network' | 'session-not-kept' | 'invalid-code' | 'rate-limited' | 'no-license' | 'trial-ended' | 'unauthorized' | 'email-not-configured' | 'auth-not-configured' | 'invalid-request' | 'unexpected';

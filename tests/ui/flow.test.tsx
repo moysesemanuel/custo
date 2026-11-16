@@ -131,7 +131,7 @@ describe('Estados de carregamento e vazios', () => {
     expect(screen.getByText('Carregando seus dados…')).toBeTruthy();
     expect(screen.queryByLabelText('Nome do cliente')).toBeNull();
     await loaded();
-    expect(screen.getByRole('heading', { name: /Bom trabalho começa organizado/ })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /^(Bom dia|Boa tarde|Boa noite)!$/ })).toBeTruthy();
   });
   it('páginas vazias explicam o próximo passo', async () => {
     const u = user();

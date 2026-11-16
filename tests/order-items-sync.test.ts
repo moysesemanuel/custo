@@ -173,7 +173,7 @@ describe('Encomendas antigas no D1 e migração 0012', () => {
   const MIGRATIONS = join(__dirname, '..', 'worker', 'migrations');
   it('0012 é aditiva: não altera nenhuma linha existente; encomendas antigas são lidas como UM item e reenviar não gera conflito', async () => {
     const db = createTestD1({ upTo: '0011_order_packaging_charge.sql' });
-    db.raw.exec(readFileSync(join(MIGRATIONS, '0013_license_trial.sql'), 'utf8')); // o login do Worker novo lê o prazo da licença
+    db.raw.exec(readFileSync(join(MIGRATIONS, '0013_license_trial.sql'), 'utf8')); db.raw.exec(readFileSync(join(MIGRATIONS, '0014_license_holder_name.sql'), 'utf8')); // o login do Worker novo lê o prazo da licença
     const srv = makeServer(NOW, { db }); await srv.issueFor('bia@exemplo.com'); const ses = await srv.login('bia@exemplo.com');
     const userId = (db.raw.prepare("SELECT id FROM users WHERE email = 'bia@exemplo.com'").get() as { id: string }).id;
     db.raw.prepare('INSERT INTO sync_state (user_id, revision, updated_at) VALUES (?, 5, ?) ON CONFLICT(user_id) DO UPDATE SET revision = 5').run(userId, NOW.toISOString());

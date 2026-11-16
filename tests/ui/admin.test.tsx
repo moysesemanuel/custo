@@ -10,7 +10,7 @@ let srv: Server; let owner: Session; let ana: Session; let flaky: { network: boo
 const grant = (email: string) => { const u = srv.db.raw.prepare('SELECT id FROM users WHERE email = ?').get(email) as { id: string }; srv.db.raw.prepare("INSERT INTO admins (user_id, role, granted_at, granted_by) VALUES (?, 'owner', 'x', 'cli')").run(u.id); };
 const useBrowser = (s: Session) => { const real = srv.fetchFor(s); vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => { if (flaky.network && (!flaky.path || flaky.path.test(url))) throw new TypeError('Failed to fetch'); return real(url, init); })); };
 const open = () => render(<AdminApp apiBase={BASE} />);
-const lic = (email: string) => (srv.db.raw.prepare('SELECT id, status FROM licenses WHERE email = ?').get(email) as { id: string; status: string });
+const lic = (email: string) => (srv.db.raw.prepare('SELECT id, status, holder_name FROM licenses WHERE email = ?').get(email) as { id: string; status: string; holder_name: string | null });
 
 beforeEach(async () => {
   flaky = { network: false }; srv = makeServer();
@@ -37,12 +37,27 @@ describe('Painel /admin', () => {
   it('cadastra cliente (sem enviar e-mail), mostra os detalhes e é idempotente', async () => {
     const u = userEvent.setup(); open(); await u.click(await screen.findByRole('button', { name: /^Clientes$/ }));
     await u.click(await screen.findByRole('button', { name: /Cadastrar cliente/ })); await u.type(screen.getByLabelText('E-mail do cliente'), 'Nova@Exemplo.com'); await u.type(screen.getByLabelText(/Rótulo/), 'Doces da Nova');
+    expect((screen.getByRole('button', { name: 'Cadastrar' }) as HTMLButtonElement).disabled).toBe(true); // o nome da pessoa é obrigatório
+    await u.type(screen.getByLabelText(/Nome da pessoa/), '  Nova   Silva ');
     await u.click(screen.getByRole('button', { name: 'Cadastrar' }));
-    expect(await screen.findByRole('heading', { name: 'nova@exemplo.com' })).toBeTruthy(); expect(screen.getByText(/Cliente cadastrado/)).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Nova Silva' })).toBeTruthy(); expect(screen.getByText(/Cliente cadastrado/)).toBeTruthy();
+    expect(srv.table('licenses').find(l => l.email === 'nova@exemplo.com')?.holder_name).toBe('Nova Silva');
     expect(srv.mail.outbox).toHaveLength(2); // só os códigos dos logins do preparo do teste
     expect(srv.table('licenses').filter(l => l.email === 'nova@exemplo.com')).toHaveLength(1);
-    await u.click(screen.getByRole('button', { name: 'Voltar à lista' })); await u.click(await screen.findByRole('button', { name: /Cadastrar cliente/ })); await u.type(screen.getByLabelText('E-mail do cliente'), 'nova@exemplo.com'); await u.click(screen.getByRole('button', { name: 'Cadastrar' }));
+    await u.click(screen.getByRole('button', { name: 'Voltar à lista' })); await u.click(await screen.findByRole('button', { name: /Cadastrar cliente/ })); await u.type(screen.getByLabelText(/Nome da pessoa/), 'Outra'); await u.type(screen.getByLabelText('E-mail do cliente'), 'nova@exemplo.com'); await u.click(screen.getByRole('button', { name: 'Cadastrar' }));
     expect(await screen.findByText(/Já existe uma licença/)).toBeTruthy(); expect(srv.table('licenses').filter(l => l.email === 'nova@exemplo.com')).toHaveLength(1);
+    expect(srv.table('licenses').find(l => l.email === 'nova@exemplo.com')?.holder_name).toBe('Nova Silva'); // nada sobrescrito
+  });
+  it('mostra e altera o nome da pessoa na ficha (registrado no histórico)', async () => {
+    const u = userEvent.setup(); open(); await toDetail(u, 'ana@exemplo.com');
+    expect(screen.getByText('não informado')).toBeTruthy();
+    await u.click(screen.getByRole('button', { name: 'Informar nome' }));
+    await u.type(screen.getByLabelText('Nome da pessoa'), 'Ana 123'); await u.click(screen.getByRole('button', { name: 'Salvar' }));
+    expect(await screen.findByRole('alert')).toBeTruthy(); expect(lic('ana@exemplo.com').holder_name).toBeNull();
+    await u.clear(screen.getByLabelText('Nome da pessoa')); await u.type(screen.getByLabelText('Nome da pessoa'), 'Ana Lúcia'); await u.click(screen.getByRole('button', { name: 'Salvar' }));
+    expect(await screen.findByText('Nome salvo: Ana Lúcia.')).toBeTruthy(); expect(lic('ana@exemplo.com').holder_name).toBe('Ana Lúcia');
+    expect(await screen.findByRole('heading', { name: 'Ana Lúcia' })).toBeTruthy();
+    expect(srv.table('admin_audit').filter(a => a.action === 'customer.rename')).toHaveLength(1);
   });
   it('pesquisa e paginação ("Carregar mais")', async () => {
     for (let i = 0; i < 30; i++) await srv.issueFor(`lote${String(i).padStart(2, '0')}@exemplo.com`);

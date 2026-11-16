@@ -97,6 +97,7 @@ npm test
 
 O app é local-first e **funciona inteiro sem conta e sem internet**. Existe um serviço remoto mínimo, em `worker/` (Cloudflare Workers + D1), usado só quando a pessoa entra em uma conta liberada pela sua licença:
 
+- **Menu da conta** (ícone de perfil no topo; no celular, no cabeçalho): nome e e-mail de quem está conectado, atalho para Configurações e **Sair**. A Visão geral cumprimenta a pessoa pelo nome cadastrado no painel administrativo.
 - **Conta** (Configurações): login sem senha por código de 8 dígitos enviado ao e-mail da compra, até **2 dispositivos** (o terceiro pode substituir um dos antigos), remoção de dispositivos e sessão em cookie `HttpOnly` com proteção CSRF.
 - **Sincronização:** o servidor guarda a versão oficial dos dados e o dispositivo mantém cópia offline. Alterações offline são enviadas depois; edições do mesmo item em dois dispositivos nunca se perdem em silêncio (a versão do servidor vale e a sua fica guardada para você refazer). Dados de outra conta no mesmo dispositivo exigem decisão do usuário.
 - **Orçamento por link** (botão "Orçamento por link" em cada encomenda): prévia, avisos de limitação, publicação em link curto (`/o/<id>`), copiar e compartilhar no WhatsApp; em Configurações, lista dos links publicados e **revogação**. O orçamento público nunca leva custo, margem nem dados do cliente.

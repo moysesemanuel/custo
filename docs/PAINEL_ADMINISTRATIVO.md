@@ -114,3 +114,11 @@ Verificação adicional por código de e-mail para ações sensíveis (gasta cot
 - **Ações no painel:** "Prorrogar teste em 7 dias" (a partir do fim atual, ou de hoje se já venceu; antes do 1º acesso, soma dias) e "Tornar licença permanente" (remove o prazo; devolve o acesso na hora). As duas ficam no histórico.
 - **Licenças existentes:** `trial_days` e `expires_at` nulos = sem prazo; nada muda para elas.
 - **Ordem de publicação:** aplicar a migração 0013 **antes** do Worker novo (o login do Worker novo lê as colunas novas).
+
+## Nome da pessoa (migração 0014)
+
+- **Cadastro:** "Cadastrar cliente" pede o **nome da pessoa** (obrigatório no painel; a API ainda aceita cadastro sem nome, para a CLI e cadastros antigos). Até 60 letras, com espaço, apóstrofo, ponto e hífen; espaços repetidos são normalizados.
+- **Ficha do cliente:** mostra o nome com "Alterar" / "Informar nome" (`POST /api/admin/customers/:id/name`, auditado como `customer.rename`). A lista mostra o nome no lugar do e-mail quando existe, e a pesquisa também procura pelo nome.
+- **No app:** o nome volta na sessão (`license.holderName`) e a Visão geral cumprimenta pelo primeiro nome ("Boa tarde, Lana!"), pela hora do aparelho. Sem nome cadastrado, a saudação fica sem nome.
+- **Dados existentes:** licenças antigas ficam sem nome (NULL) até alguém informar pela ficha. Migração aditiva (só `ADD COLUMN`).
+- **Ordem de publicação:** migração 0014 **antes** do Worker novo (o login lê a coluna nova).

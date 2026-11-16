@@ -41,7 +41,7 @@ async function throttle(env: AuthEnv, request: Request, now: Date, scope: 'login
 
 const publicSession = (s: SessionRow, currentId?: string) => ({ id: s.id, deviceLabel: s.device_label, createdAt: s.created_at, lastSeenAt: s.last_seen_at, current: s.id === currentId });
 /** Situação EFETIVA (teste vencido = 'expired') e fim do teste, para o app avisar antes e bloquear depois. */
-const publicLicense = (l: AccountLicense | null, nowIso: string) => (l ? { status: effectiveStatus(l, nowIso), quotaActive: l.quota_active, quotaDaily: l.quota_daily, expiresAt: l.expires_at ?? null } : null);
+const publicLicense = (l: AccountLicense | null, nowIso: string) => (l ? { status: effectiveStatus(l, nowIso), quotaActive: l.quota_active, quotaDaily: l.quota_daily, expiresAt: l.expires_at ?? null, holderName: l.holder_name ?? null } : null);
 
 /** POST /api/auth/request-code: envia um código de acesso de 8 dígitos. A resposta é igual exista ou não uma conta (não revela cadastros). */
 export async function requestCode(request: Request, env: AuthEnv, deps: AuthDeps): Promise<Response> {

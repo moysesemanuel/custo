@@ -1,5 +1,5 @@
 import { ArchiveRestore, CalendarDays, ChefHat, ChevronLeft, ChevronRight, ClipboardList, LayoutDashboard, Package, PlusCircle, Ruler, Settings, ShoppingBasket } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Page } from '../utils';
 
 const pages: { id: Page; label: string; icon: typeof LayoutDashboard }[] = [
@@ -15,7 +15,8 @@ const pages: { id: Page; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'settings', label: 'Configurações', icon: Settings },
 ];
 
-export function Sidebar({ activePage, onNavigate }: { activePage: Page; onNavigate: (page: Page) => void }) {
+/** `account`: menu da conta mostrado no cabeçalho só no celular (no computador ele fica na barra do topo). */
+export function Sidebar({ activePage, onNavigate, account }: { activePage: Page; onNavigate: (page: Page) => void; account?: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   return <aside className={`sidebar${collapsed ? ' is-collapsed' : ''}`} aria-label="Menu lateral">
     <div className="sidebar-brand-row">
@@ -28,6 +29,7 @@ export function Sidebar({ activePage, onNavigate }: { activePage: Page; onNaviga
       <button className="sidebar-toggle" type="button" aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'} aria-expanded={!collapsed} aria-controls="primary-navigation" title={collapsed ? 'Expandir menu' : 'Recolher menu'} onClick={() => setCollapsed(value => !value)}>
         {collapsed ? <ChevronRight size={14} aria-hidden="true" /> : <ChevronLeft size={14} aria-hidden="true" />}
       </button>
+      {account}
     </div>
     <nav className="nav" id="primary-navigation" aria-label="Navegação principal">
       {pages.map(({ id, label, icon: Icon }) => <button key={id} className={activePage === id ? 'active' : ''} aria-label={label} title={label} aria-current={activePage === id ? 'page' : undefined} onClick={() => onNavigate(id)}>

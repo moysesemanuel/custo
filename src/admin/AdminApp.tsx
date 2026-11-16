@@ -8,9 +8,10 @@ import { BrandPanel } from '../components/BrandPanel';
 import { ADMIN_MESSAGES, createAdminClient, type AdminClient, type AdminFailure, type AuditEvent, type CustomerDetail, type CustomerRow, type Overview } from './adminClient';
 import './admin.css';
 import { isTrialOver, TRIAL_DAYS, trialDaysLeft } from '../../shared/trial';
+import { cleanPersonName, PERSON_NAME_MAX } from '../../shared/personName';
 
 const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—');
-const ACTIONS: Record<string, string> = { 'customer.create': 'Cadastro de cliente', 'customer.suspend': 'Suspensão de acesso', 'customer.activate': 'Reativação de acesso', 'customer.trial-extend': 'Teste prorrogado', 'customer.trial-permanent': 'Licença tornada permanente', 'session.revoke': 'Sessão revogada', 'session.revoke-all': 'Todas as sessões revogadas', 'admin.grant': 'Acesso administrativo concedido', 'admin.revoke': 'Acesso administrativo revogado' };
+const ACTIONS: Record<string, string> = { 'customer.create': 'Cadastro de cliente', 'customer.suspend': 'Suspensão de acesso', 'customer.activate': 'Reativação de acesso', 'customer.trial-extend': 'Teste prorrogado', 'customer.trial-permanent': 'Licença tornada permanente', 'customer.rename': 'Nome alterado', 'session.revoke': 'Sessão revogada', 'session.revoke-all': 'Todas as sessões revogadas', 'admin.grant': 'Acesso administrativo concedido', 'admin.revoke': 'Acesso administrativo revogado' };
 const RESULTS: Record<string, string> = { ok: 'aplicado', noop: 'sem alteração' };
 type View = { name: 'overview' } | { name: 'customers' } | { name: 'customer'; id: string } | { name: 'audit'; licenseId?: string };
 
@@ -149,11 +150,11 @@ function CustomersPanel({ api, fail, open, inform }: { api: AdminClient; fail: (
   useEffect(() => { void load(applied); }, [applied, load]);
   return <><Head title="Clientes" hint="Pesquise por e-mail ou rótulo. Cada página traz 25 clientes."><button className="primary" onClick={() => setAdding(true)}><UserPlus size={17} /> Cadastrar cliente</button></Head>
     <form className="admin-toolbar" role="search" onSubmit={e => { e.preventDefault(); setApplied({ q: q.trim(), status }); }}>
-      <div className="grow"><Field label="Pesquisar"><input type="search" value={q} maxLength={60} placeholder="e-mail ou rótulo" onChange={e => setQ(e.target.value)} /></Field></div>
+      <div className="grow"><Field label="Pesquisar"><input type="search" value={q} maxLength={60} placeholder="nome, e-mail ou rótulo" onChange={e => setQ(e.target.value)} /></Field></div>
       <div><Field label="Situação"><select value={status} onChange={e => { setStatus(e.target.value); setApplied({ q: q.trim(), status: e.target.value }); }}><option value="">Todas</option><option value="active">Ativas</option><option value="revoked">Suspensas</option></select></Field></div>
       <button className="secondary" type="submit">Pesquisar</button></form>
     {err && <div className="notice error" role="alert">{err}</div>}
-    <ul className="admin-rows" aria-label="Clientes">{rows.map(c => <li key={c.id} className="admin-row"><div className="main"><strong>{c.email}</strong><div className="meta">{statusTag(c.status)}{trialTag(c)}{c.isAdmin && <span className="tag">Administrador</span>}{c.label && <span>{c.label}</span>}<span>Cadastro: {when(c.createdAt)}</span><span>Último acesso: {c.accountId ? when(c.lastAccessAt) : 'ainda não entrou'}</span><span>Sessões ativas: {c.activeSessions}</span></div></div><button className="secondary" onClick={() => open(c.id)} aria-label={`Detalhes de ${c.email}`}>Detalhes</button></li>)}</ul>
+    <ul className="admin-rows" aria-label="Clientes">{rows.map(c => <li key={c.id} className="admin-row"><div className="main"><strong>{c.name ?? c.email}</strong><div className="meta">{c.name && <span>{c.email}</span>}{statusTag(c.status)}{trialTag(c)}{c.isAdmin && <span className="tag">Administrador</span>}{c.label && <span>{c.label}</span>}<span>Cadastro: {when(c.createdAt)}</span><span>Último acesso: {c.accountId ? when(c.lastAccessAt) : 'ainda não entrou'}</span><span>Sessões ativas: {c.activeSessions}</span></div></div><button className="secondary" onClick={() => open(c.id)} aria-label={`Detalhes de ${c.email}`}>Detalhes</button></li>)}</ul>
     {loaded && !rows.length && !busy && <div className="empty">Nenhum cliente encontrado.</div>}
     {busy && <p className="muted" role="status">Carregando…</p>}
     {next && !busy && <div style={{ marginTop: 14 }}><button className="secondary" onClick={() => void load(applied, next)}>Carregar mais</button></div>}
@@ -161,20 +162,41 @@ function CustomersPanel({ api, fail, open, inform }: { api: AdminClient; fail: (
 }
 
 function AddCustomer({ api, close, done, fail }: { api: AdminClient; close: () => void; done: (msg: string, id: string | null) => void; fail: (r: AdminFailure) => void }) {
-  const [email, setEmail] = useState(''); const [label, setLabel] = useState(''); const [trial, setTrial] = useState(true); const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
+  const [email, setEmail] = useState(''); const [name, setName] = useState(''); const [label, setLabel] = useState(''); const [trial, setTrial] = useState(true); const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
   async function submit(e: FormEvent) {
-    e.preventDefault(); setBusy(true); setErr('');
-    const r = await api.createCustomer({ email: email.trim(), ...(label.trim() ? { label: label.trim() } : {}), trialDays: trial ? TRIAL_DAYS : null }); setBusy(false);
+    e.preventDefault(); setErr('');
+    const clean = cleanPersonName(name); if (!clean) { setErr(NAME_RULE); return; }
+    setBusy(true);
+    const r = await api.createCustomer({ email: email.trim(), name: clean, ...(label.trim() ? { label: label.trim() } : {}), trialDays: trial ? TRIAL_DAYS : null }); setBusy(false);
     if (!r.ok) { setErr(ADMIN_MESSAGES[r.reason]); fail(r.reason); return; }
     done(r.value.created ? `Cliente cadastrado: ${r.value.email}. Nenhum e-mail foi enviado; o primeiro login usa o código por e-mail.` : `Já existe uma licença para ${r.value.email}; nada foi criado nem alterado.`, r.value.id);
   }
   return <Modal title="Cadastrar cliente" titleId="add-customer" onClose={close} closeLabel="Fechar"><form className="stack" onSubmit={submit}>
-    <Field label="E-mail do cliente"><input type="email" data-autofocus value={email} onChange={e => setEmail(e.target.value)} required /></Field>
+    <Field label="Nome da pessoa (o app usa para cumprimentá-la)"><input data-autofocus value={name} maxLength={PERSON_NAME_MAX} autoComplete="off" onChange={e => setName(e.target.value)} required placeholder="ex.: Lana Costa" /></Field>
+    <Field label="E-mail do cliente"><input type="email" value={email} onChange={e => setEmail(e.target.value)} required /></Field>
     <Field label="Rótulo (opcional, só para você)"><input value={label} maxLength={60} onChange={e => setLabel(e.target.value)} placeholder="ex.: Doces da Bia" /></Field>
     <label style={{ display: 'flex', gap: 10, alignItems: 'center', fontWeight: 600 }}><input type="checkbox" checked={trial} onChange={e => setTrial(e.target.checked)} style={{ width: 18, height: 18 }} /> Teste gratuito de {TRIAL_DAYS} dias (desmarque para licença sem prazo)</label>
     <p className="muted" style={{ margin: 0 }}>Cria a licença ativa para este e-mail. {trial ? `O teste de ${TRIAL_DAYS} dias começa a contar no primeiro acesso e termina sozinho. ` : ''}Nenhum código é enviado agora; o cliente pede o código na tela de login.</p>
     {err && <div className="notice error" role="alert">{err}</div>}
-    <div className="modal-actions"><button type="button" className="secondary" onClick={close}>Cancelar</button><button className="primary" disabled={busy || !email.trim()}>{busy ? 'Cadastrando…' : 'Cadastrar'}</button></div></form></Modal>;
+    <div className="modal-actions"><button type="button" className="secondary" onClick={close}>Cancelar</button><button className="primary" disabled={busy || !email.trim() || !name.trim()}>{busy ? 'Cadastrando…' : 'Cadastrar'}</button></div></form></Modal>;
+}
+
+const NAME_RULE = `Informe o nome da pessoa (até ${PERSON_NAME_MAX} letras; pode ter espaço, apóstrofo, ponto e hífen).`;
+
+/** Nome da pessoa: mostrado e editável na ficha (o app usa na saudação). */
+function NameEditor({ api, id, name, fail, saved }: { api: AdminClient; id: string; name: string | null; fail: (r: AdminFailure) => void; saved: (msg: string) => Promise<void> }) {
+  const [editing, setEditing] = useState(false); const [value, setValue] = useState(name ?? ''); const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
+  if (!editing) return <>{name ?? <span className="muted">não informado</span>} <button type="button" className="auth-text-action" onClick={() => { setValue(name ?? ''); setErr(''); setEditing(true); }}>{name ? 'Alterar' : 'Informar nome'}</button></>;
+  async function submit(e: FormEvent) {
+    e.preventDefault(); setErr('');
+    const clean = cleanPersonName(value); if (!clean) { setErr(NAME_RULE); return; }
+    setBusy(true); const r = await api.rename(id, clean); setBusy(false);
+    if (!r.ok) { setErr(ADMIN_MESSAGES[r.reason]); fail(r.reason); return; }
+    setEditing(false); await saved(r.value.changed ? `Nome salvo: ${clean}.` : 'O nome já era esse; nada mudou.');
+  }
+  return <form className="admin-name-form" onSubmit={submit}><input aria-label="Nome da pessoa" value={value} maxLength={PERSON_NAME_MAX} autoFocus onChange={e => setValue(e.target.value)} />
+    <button className="primary" disabled={busy || !value.trim()}>{busy ? 'Salvando…' : 'Salvar'}</button><button type="button" className="secondary" onClick={() => setEditing(false)}>Cancelar</button>
+    {err && <div className="notice error" role="alert">{err}</div>}</form>;
 }
 
 type Pending = { kind: 'suspend' | 'revoke-all' | 'revoke-one' | 'activate' | 'extend' | 'permanent'; sessionId?: string; label?: string };
@@ -185,10 +207,10 @@ function CustomerPanel({ api, id, fail, inform, back, history }: { api: AdminCli
   useEffect(() => { void load(); }, [load]);
   if (!d) return <><Head title="Cliente" /><button className="secondary" onClick={back}>Voltar à lista</button>{err ? <div className="notice error" role="alert" style={{ marginTop: 12 }}>{err}</div> : <p className="muted" role="status">Carregando…</p>}</>;
   const c = d.customer;
-  return <><Head title={c.email} hint="Dados administrativos da conta."><button className="secondary" onClick={back}>Voltar à lista</button></Head>
+  return <><Head title={c.name ?? c.email} hint="Dados administrativos da conta."><button className="secondary" onClick={back}>Voltar à lista</button></Head>
     {err && <div className="notice error" role="alert" style={{ marginBottom: 12 }}>{err}</div>}
     <section className="card stack" style={{ marginBottom: 16 }}><h2 className="section-title">Conta</h2>
-      <dl className="admin-dl"><dt>Licença</dt><dd>{statusTag(c.status)}{c.suspendedAt && ` desde ${when(c.suspendedAt)}`}</dd><dt>Identificador da conta</dt><dd>{c.accountId ?? 'ainda não entrou (sem conta criada)'}</dd><dt>Licença (ID)</dt><dd>{c.id}</dd><dt>E-mail</dt><dd>{c.email}</dd>{c.label && <><dt>Rótulo</dt><dd>{c.label}</dd></>}
+      <dl className="admin-dl"><dt>Licença</dt><dd>{statusTag(c.status)}{c.suspendedAt && ` desde ${when(c.suspendedAt)}`}</dd><dt>Identificador da conta</dt><dd>{c.accountId ?? 'ainda não entrou (sem conta criada)'}</dd><dt>Licença (ID)</dt><dd>{c.id}</dd><dt>Nome</dt><dd><NameEditor api={api} id={id} name={c.name} fail={fail} saved={async msg => { inform(msg); await load(); }} /></dd><dt>E-mail</dt><dd>{c.email}</dd>{c.label && <><dt>Rótulo</dt><dd>{c.label}</dd></>}
         <dt>Cadastro</dt><dd>{when(c.createdAt)}</dd><dt>Primeiro acesso</dt><dd>{when(c.emailVerifiedAt)}</dd><dt>Último acesso</dt><dd>{c.accountId ? when(c.lastAccessAt) : '—'}</dd><dt>Limites</dt><dd>{c.quotaActive} links ativos · {c.quotaDaily} novos por dia</dd><dt>Prazo</dt><dd>{trialText(c)?.text ?? 'Sem prazo (licença permanente)'}</dd></dl>
       {c.isAdmin ? <div className="notice warn">Conta administrativa: não pode ser suspensa nem desconectada por este painel.</div> : <div className="admin-actions">{c.status === 'active' ? <button className="secondary danger" onClick={() => setPending({ kind: 'suspend' })}>Suspender acesso</button> : <button className="primary" onClick={() => setPending({ kind: 'activate' })}>Reativar acesso</button>}{c.trialDays !== null && <><button className="secondary" onClick={() => setPending({ kind: 'extend' })}>Prorrogar teste em 7 dias</button><button className="secondary" onClick={() => setPending({ kind: 'permanent' })}>Tornar licença permanente</button></>}</div>}</section>
     <section className="card stack" style={{ marginBottom: 16 }}><h2 className="section-title">Sessões ativas ({d.sessions.length})</h2>

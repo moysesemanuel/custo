@@ -4,9 +4,9 @@ import type { D1Like, LicenseRow } from './store';
 export type UserRow = { id: string; email: string; email_verified_at: string | null; created_at: string; disabled_at: string | null };
 export type SessionRow = { id: string; user_id: string; token_hash: string; csrf_token: string; device_label: string | null; created_at: string; last_seen_at: string; expires_at: string; revoked_at: string | null };
 export type CodeRow = { id: string; email: string; code_hash: string; created_at: string; expires_at: string; attempts: number; used_at: string | null };
-export type AccountLicense = LicenseRow & { email: string | null; user_id: string | null };
+export type AccountLicense = LicenseRow & { email: string | null; user_id: string | null; holder_name?: string | null };
 
-const LICENSE_COLUMNS = 'id, key_hash, label, status, quota_active, quota_daily, created_at, revoked_at, email, user_id, trial_days, expires_at';
+const LICENSE_COLUMNS = 'id, key_hash, label, status, quota_active, quota_daily, created_at, revoked_at, email, user_id, trial_days, expires_at, holder_name';
 
 // ---- usuários e licenças da conta ----
 export const findUserByEmail = (db: D1Like, email: string) => db.prepare('SELECT id, email, email_verified_at, created_at, disabled_at FROM users WHERE email = ?').bind(email).first<UserRow>();

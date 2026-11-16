@@ -3,8 +3,17 @@ import { money } from '../domain/pricing';
 import { orderCostBasis, orderTotalCost } from '../domain/orderCost';
 import { balanceDue, orderTotal } from '../domain/payments';
 import { brDate, type Page, type PageProps } from '../utils';
+import { useAccount } from '../account/AccountContext';
+import { firstName } from '../../shared/personName';
+
+/** "Bom dia" (5h–11h), "Boa tarde" (12h–17h) ou "Boa noite", pelo relógio do aparelho. */
+export const greetingFor = (hour: number) => (hour >= 5 && hour < 12 ? 'Bom dia' : hour >= 12 && hour < 18 ? 'Boa tarde' : 'Boa noite');
 
 export function DashboardPage({ data, focus }: PageProps) {
+  const acc = useAccount();
+  const name = firstName(acc.session?.license?.holderName);
+  const fresh = !data.ingredients.length && !data.recipes.length && !data.orders.length;
+  const greeting = `${greetingFor(new Date().getHours())}${name ? `, ${name}` : ''}!`;
   const confirmed = data.orders.filter(o => o.status !== 'Orçamento');
   const totalRevenue = confirmed.reduce((s, o) => s + orderTotal(o), 0);
   const amountToReceive = confirmed.reduce((s, o) => s + balanceDue(o), 0);
@@ -24,7 +33,7 @@ export function DashboardPage({ data, focus }: PageProps) {
     { label: 'Faça um backup dos dados', ok: false, pg: 'backup' },
   ];
   return <>
-    <div className="head"><div><div className="eyebrow">Painel principal</div><h1>Bom trabalho começa organizado.</h1><p className="muted">Acompanhe suas encomendas, custos e valores a receber.</p></div><button className="primary" onClick={() => focus('new-order')}><Plus size={17} /> Nova encomenda</button></div>
+    <div className="head"><div><div className="eyebrow">Painel principal</div><h1>{greeting}</h1><p className="muted">{fresh ? 'Que bom ter você aqui.' : 'Que bom ter você de volta.'} Acompanhe suas encomendas, custos e valores a receber.</p></div><button className="primary" onClick={() => focus('new-order')}><Plus size={17} /> Nova encomenda</button></div>
     <div className="welcome"><div><h2>Seu negócio, no caminho certo.</h2><p>Cadastre seus ingredientes, monte receitas e calcule preços antes de aceitar pedidos. Comece por uma tarefa de cada vez.</p></div><button className="primary" onClick={() => focus(data.ingredients.length ? 'recipes' : 'ingredients')}>{data.ingredients.length ? 'Criar receita' : 'Cadastrar ingrediente'} <ArrowRight size={17} /></button></div>
     <div className="cards">
       <div className="card metric-card"><span className="icon-box"><ClipboardCheck size={20} /></span><span className="metric-label">Pedidos em aberto</span><span className="metric">{openOrders.length.toString().padStart(2, '0')}</span></div>

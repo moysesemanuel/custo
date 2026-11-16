@@ -3,6 +3,7 @@ import { activeSessionsOf, auditStatement, AUDIT_PAGE_MAX, AUDIT_RETENTION_DAYS,
 import { apiError, json, readJsonBody } from './http';
 import { generateLicenseId, generateLicenseKey, hashLicenseKey, LICENSE_ID_PATTERN } from './licenses';
 import { LABEL_PATTERN } from './licenseAdmin';
+import { cleanPersonName, PERSON_NAME_MAX } from '../../shared/personName';
 import { checkCsrf, resolveSession, type SessionEnv } from './session';
 import { consumeRateLimit } from './store';
 
@@ -34,8 +35,8 @@ async function authorizeAdmin(request: Request, env: SessionEnv, deps: AdminDeps
 }
 
 const pageSize = (raw: string | null, max: number) => { const n = Number(raw); return Number.isInteger(n) && n >= 1 ? Math.min(n, max) : PAGE_DEFAULT; };
-const publicCustomer = (c: { id: string; email: string; label: string | null; status: string; created_at: string; revoked_at: string | null; user_id: string | null; last_seen_at: string | null; is_admin: number; trial_days: number | null; expires_at: string | null }) =>
-  ({ id: c.id, email: c.email, label: c.label, status: c.status, createdAt: c.created_at, suspendedAt: c.revoked_at, accountId: c.user_id, lastAccessAt: c.last_seen_at, isAdmin: c.is_admin > 0, trialDays: c.trial_days, trialEndsAt: c.expires_at });
+const publicCustomer = (c: { id: string; email: string; label: string | null; holder_name: string | null; status: string; created_at: string; revoked_at: string | null; user_id: string | null; last_seen_at: string | null; is_admin: number; trial_days: number | null; expires_at: string | null }) =>
+  ({ id: c.id, email: c.email, label: c.label, name: c.holder_name, status: c.status, createdAt: c.created_at, suspendedAt: c.revoked_at, accountId: c.user_id, lastAccessAt: c.last_seen_at, isAdmin: c.is_admin > 0, trialDays: c.trial_days, trialEndsAt: c.expires_at });
 const publicAudit = (a: Awaited<ReturnType<typeof listAudit>>[number]) => ({ id: a.id, at: a.at, action: a.action, result: a.result, detail: a.detail, admin: a.admin_email ?? (a.admin_user_id === 'cli' ? 'terminal (bootstrap)' : null), licenseId: a.license_id, customerEmail: a.license_email });
 
 /** Roteador /api/admin/*. Devolve undefined se a rota não for administrativa. */
@@ -48,7 +49,7 @@ export async function adminRoute(request: Request, env: SessionEnv, deps: AdminD
   const write = method !== 'GET' && method !== 'HEAD';
   if (method !== 'GET' && method !== 'POST' && method !== 'DELETE') return apiError(405, 'METHOD_NOT_ALLOWED', 'Método não permitido.');
 
-  const m = path.match(/^\/api\/admin\/customers\/(lic_[0-9a-f]{16})(?:\/(suspend|activate|sessions|trial)(?:\/(revoke-all|extend|permanent|ses_[0-9a-f]{16}))?)?$/);
+  const m = path.match(/^\/api\/admin\/customers\/(lic_[0-9a-f]{16})(?:\/(suspend|activate|sessions|trial|name)(?:\/(revoke-all|extend|permanent|ses_[0-9a-f]{16}))?)?$/);
   const known = path === '/api/admin/me' || path === '/api/admin/overview' || path === '/api/admin/customers' || path === '/api/admin/audit' || m;
   if (!known) return apiError(404, 'NOT_FOUND', 'Rota não encontrada.');
   const gate = await authorizeAdmin(request, env, deps, write);
@@ -79,11 +80,14 @@ export async function adminRoute(request: Request, env: SessionEnv, deps: AdminD
   if (path === '/api/admin/customers' && method === 'POST') {
     const body = await readJsonBody(request, 2048);
     if (!body.ok) return apiError(body.status, body.error, 'Corpo da requisição inválido.');
-    const b = (body.data ?? {}) as { email?: unknown; label?: unknown; quotaActive?: unknown; quotaDaily?: unknown; trialDays?: unknown };
+    const b = (body.data ?? {}) as { email?: unknown; name?: unknown; label?: unknown; quotaActive?: unknown; quotaDaily?: unknown; trialDays?: unknown };
     const email = normalizeEmail(b.email);
     if (!email) return apiError(400, 'INVALID_EMAIL', 'Informe um e-mail válido.');
     const label = typeof b.label === 'string' && b.label.trim() ? b.label.trim() : null;
     if (b.label !== undefined && b.label !== null && (typeof b.label !== 'string' || (label !== null && !LABEL_PATTERN.test(label)))) return apiError(400, 'INVALID_REQUEST', 'Rótulo inválido (até 60 letras, números e . _ @ # , ( ) - /).');
+    // Nome da pessoa (para o app falar com ela pelo nome). Opcional na API (CLI e cadastros antigos); o painel exige.
+    const holderName = b.name === undefined || b.name === null || b.name === '' ? null : cleanPersonName(b.name);
+    if (holderName === null && b.name !== undefined && b.name !== null && b.name !== '') return apiError(400, 'INVALID_NAME', `Nome inválido (até ${PERSON_NAME_MAX} letras, espaços, apóstrofo, ponto e hífen).`);
     const quota = (v: unknown, d: number) => (v === undefined ? d : Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 10_000 ? (v as number) : NaN);
     const quotaActive = quota(b.quotaActive, 100), quotaDaily = quota(b.quotaDaily, 30);
     if (Number.isNaN(quotaActive) || Number.isNaN(quotaDaily)) return apiError(400, 'INVALID_REQUEST', 'Cotas devem ser inteiros entre 0 e 10.000.');
@@ -93,7 +97,7 @@ export async function adminRoute(request: Request, env: SessionEnv, deps: AdminD
     // Idempotente: já existe licença para o e-mail → nada é criado (sem duplicidade, sem sobrescrever) e a resposta aponta a existente.
     const id = generateLicenseId();
     const results = await env.DB.batch([
-      env.DB.prepare('INSERT OR IGNORE INTO licenses (id, key_hash, label, email, status, quota_active, quota_daily, created_at, trial_days) VALUES (?, ?, ?, ?, \'active\', ?, ?, ?, ?)').bind(id, await hashLicenseKey(generateLicenseKey()), label, email, quotaActive, quotaDaily, iso, trialDays),
+      env.DB.prepare('INSERT OR IGNORE INTO licenses (id, key_hash, label, email, status, quota_active, quota_daily, created_at, trial_days, holder_name) VALUES (?, ?, ?, ?, \'active\', ?, ?, ?, ?, ?)').bind(id, await hashLicenseKey(generateLicenseKey()), label, email, quotaActive, quotaDaily, iso, trialDays, holderName),
       auditStatement(env.DB, { at: iso, adminUserId: admin.userId, action: 'customer.create', licenseId: id, detailSql: "CASE WHEN changes() > 0 THEN 'created' ELSE 'already-exists' END" }),
     ]);
     await pruneAudit(env.DB, addMs(iso, -AUDIT_RETENTION_DAYS * DAY));
@@ -169,6 +173,17 @@ export async function adminRoute(request: Request, env: SessionEnv, deps: AdminD
       if ((r[0].meta.changes ?? 0) === 0) await env.DB.prepare('UPDATE licenses SET trial_days = trial_days + ?1 WHERE id = ?2 AND trial_days IS NOT NULL').bind(days, licenseId).run();
       const now = await env.DB.prepare('SELECT trial_days, expires_at FROM licenses WHERE id = ?').bind(licenseId).first<{ trial_days: number; expires_at: string | null }>();
       return json({ id: licenseId, trialDays: now?.trial_days ?? null, trialEndsAt: now?.expires_at ?? null });
+    }
+    if (sub === 'name' && !arg && method === 'POST') {
+      const body = await readJsonBody(request, 1024);
+      if (!body.ok) return apiError(body.status, body.error, 'Corpo da requisição inválido.');
+      const name = cleanPersonName((body.data as { name?: unknown } | null)?.name);
+      if (!name) return apiError(400, 'INVALID_NAME', `Nome inválido (até ${PERSON_NAME_MAX} letras, espaços, apóstrofo, ponto e hífen).`);
+      const r = await env.DB.batch([
+        env.DB.prepare('UPDATE licenses SET holder_name = ?1 WHERE id = ?2 AND holder_name IS NOT ?1').bind(name, licenseId),
+        auditStatement(env.DB, { at: iso, adminUserId: admin.userId, action: 'customer.rename', licenseId, targetUserId: c.user_id }),
+      ]); await prune();
+      return json({ id: licenseId, name, changed: (r[0].meta.changes ?? 0) > 0 });
     }
     if (sub === 'trial' && arg === 'permanent' && method === 'POST') {
       const r = await env.DB.batch([
