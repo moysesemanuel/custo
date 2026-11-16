@@ -112,9 +112,9 @@ function PendingUser({ text }: { text: string }) {
 
 /** "Digitando" do assistente enquanto a IA responde. */
 function Typing({ who }: { who?: { name: string; avatar: string } }) {
-  return <li className="msg ai" role="status" aria-label={`${who?.name ?? 'O assistente'} está escrevendo a resposta. Pode levar até 2 minutos.`}>
+  return <li className="msg ai" role="status" aria-label={`${who?.name ?? 'O assistente'} está escrevendo a resposta.`}>
     <span className="msg-who">{who ? <><img className="support-avatar" src={who.avatar} alt="" width={32} height={32} /><strong>{who.name}</strong> · escrevendo…</> : 'Assistente virtual · escrevendo…'}</span>
-    <div className="msg-body support-typing" aria-hidden="true"><span className="support-dots"><i /><i /><i /></span><span className="muted">pode levar até 2 minutos</span></div></li>;
+    <div className="msg-body support-typing" aria-hidden="true"><span className="support-dots"><i /><i /><i /></span></div></li>;
 }
 
 function Thread({ ticket, onChange }: { ticket: SupportTicket; onChange: (t: SupportTicket) => void }) {
