@@ -47,7 +47,7 @@ const addIngredient = async (u: ReturnType<typeof userEvent.setup>, name: string
   await u.click(screen.getByRole('button', { name: /Adicionar ingrediente/ }));
 };
 const editPrice = async (u: ReturnType<typeof userEvent.setup>, name: string, price: string) => {
-  await u.click(screen.getByRole('button', { name: `Editar ${name}` }));
+  await u.click(screen.getByRole('button', { name: `Ações de ${name}` })); await u.click(screen.getByRole('menuitem', { name: `Editar ${name}` }));
   fireEvent.change(screen.getByLabelText('Preço pago (R$)'), { target: { value: price } });
   await u.click(screen.getByRole('button', { name: /Salvar alterações/ }));
   await screen.findByText(/Ingrediente atualizado/);

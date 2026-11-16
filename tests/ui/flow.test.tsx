@@ -72,7 +72,7 @@ describe('Fluxo crítico: ingrediente → receita → preço → encomenda → r
 
     // O custo registrado NÃO muda quando o ingrediente fica mais caro
     await nav(u, 'Ingredientes');
-    await u.click(screen.getByRole('button', { name: 'Editar Farinha de trigo' }));
+    await u.click(screen.getByRole('button', { name: 'Ações de Farinha de trigo' })); await u.click(screen.getByRole('menuitem', { name: 'Editar Farinha de trigo' }));
     fireEvent.change(screen.getByLabelText('Preço pago (R$)'), { target: { value: '60' } });
     await u.click(screen.getByRole('button', { name: /Salvar alterações/ }));
     await nav(u, 'Pedidos'); await u.click(screen.getByRole('button', { name: 'Ver detalhes' }));

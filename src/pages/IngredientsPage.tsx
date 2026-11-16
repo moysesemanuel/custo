@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Pencil, Plus, Save, ShoppingBasket, Trash2, X } from 'lucide-react';
+import { RowMenu } from '../components/RowMenu';
 import { unitChangeAffectsRecipes, updateIngredient } from '../domain/edit';
 import { costImpact } from '../domain/impact';
 import { money } from '../domain/pricing';
@@ -32,6 +33,7 @@ export function IngredientsPage({ data, update, inform }: PageProps) {
   const [declined, setDeclined] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [adjusting, setAdjusting] = useState(false);
+  const [adding, setAdding] = useState(false); // formulário de NOVO ingrediente aberto (fica aberto para cadastrar vários em sequência)
   // Ingrediente NOVO com nome conhecido: a referência encontrada já aparece no resumo e é gravada junto (a pessoa pode ajustar ou remover).
   // Ao EDITAR, nada é adotado sozinho: só o que a pessoa escolher em "Ajustar".
   const found = useMemo(() => (editingId || catalogRef || declined ? undefined : searchCatalog(name).exact), [name, editingId, catalogRef, declined]);
@@ -44,7 +46,7 @@ export function IngredientsPage({ data, update, inform }: PageProps) {
     setEditingId(i.id); setName(i.name); setUnit(i.unit); setQty(String(i.purchaseQuantity)); setPrice(String(i.purchasePrice));
     setCupGrams(i.densityGPerMl ? String(Number(densityToGramsPerCup(i.densityGPerMl, cup).toFixed(2))) : '');
     setUnitGrams(i.gramsPerUnit ? String(i.gramsPerUnit) : '');
-    setCatalogRef(i.catalogRef); setDeclined(false);
+    setCatalogRef(i.catalogRef); setDeclined(false); setAdding(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   function updateAvailable(i: Ingredient) { return !!i.catalogRef && i.catalogRef.version !== CATALOG_VERSION && refDiffersFromCatalog(i.catalogRef); }
@@ -77,7 +79,7 @@ export function IngredientsPage({ data, update, inform }: PageProps) {
       let changes: ReturnType<typeof costImpact> = [];
       const failed = tryApply(data, update, d => { const next = updateIngredient(d, editingId, values); changes = costImpact(d, next); return next; });
       if (failed) return inform(failed);
-      resetForm();
+      resetForm(); setAdding(false);
       const priceNote = changes.length ? ` ${impactText(changes)}` : '';
       inform(unitWarning ? 'Ingrediente atualizado. Atenção: você mudou a unidade; revise as quantidades nas receitas antigas que o usam.'
         : measuresChanged && changes.length ? `Ingrediente atualizado. Atenção: as medidas mudaram o cálculo. ${impactText(changes)} Encomendas e custos já registrados não mudaram.`
@@ -98,10 +100,14 @@ export function IngredientsPage({ data, update, inform }: PageProps) {
   const refUpdate = !!current?.catalogRef && catalogRef === current.catalogRef && updateAvailable(current);
   const apply = (d: MeasuresDraft) => { setCatalogRef(d.ref); setDeclined(!d.ref); setCupGrams(d.cup); setUnitGrams(d.unit); setAdjusting(false); };
 
+  // Formulário só quando a pessoa pede (Novo ingrediente / Editar), ou quando ainda não há nenhum ingrediente.
+  const showForm = adding || !!editingId || data.ingredients.length === 0;
+  const closeForm = () => { resetForm(); setAdding(false); };
   return <>
-    <div className="head"><div><div className="eyebrow">Base de custos</div><h1>Ingredientes</h1><p className="muted">Cadastre quanto você paga pela embalagem inteira, antes de montar suas receitas.</p></div></div>
-    <div className="two">
-      <section className="card"><h2 className="section-title">{editingId ? 'Editar ingrediente' : 'Novo ingrediente'}</h2>
+    <div className="head"><div><div className="eyebrow">Base de custos</div><h1>Ingredientes</h1><p className="muted">Cadastre quanto você paga pela embalagem inteira, antes de montar suas receitas.</p></div>
+      {!showForm && <button className="primary" onClick={() => { resetForm(); setAdding(true); }}><Plus size={17} /> Novo ingrediente</button>}</div>
+    <div className="stack">
+      {showForm && <section className="card" aria-label={editingId ? 'Editar ingrediente' : 'Novo ingrediente'}><h2 className="section-title">{editingId ? 'Editar ingrediente' : 'Novo ingrediente'}</h2>
         <form onSubmit={saveIngredient} className="stack" style={{ marginTop: 19 }}>
           <Field label="Nome do ingrediente"><input value={name} onChange={e => setName(e.target.value)} placeholder="Ex.: Farinha de trigo" required /></Field>
           <div className="form-grid">
@@ -111,12 +117,22 @@ export function IngredientsPage({ data, update, inform }: PageProps) {
           <Field label="Preço pago (R$)"><MoneyInput value={price} onValueChange={setPrice} required /></Field>
           <p className="form-subtitle">Exemplo: 1000 g de farinha por R$ 6,90.</p>
           <MeasuresSummary ingredient={draftIngredient} cupSizeMl={cup} onAdjust={() => setAdjusting(true)} updateAvailable={refUpdate} />
-          <div style={{ display: 'flex', gap: 8 }}><button className="primary" type="submit">{editingId ? <><Save size={17} /> Salvar alterações</> : <><Plus size={17} /> Adicionar ingrediente</>}</button>{editingId && <button className="secondary" type="button" onClick={resetForm}><X size={16} /> Cancelar</button>}</div>
+          <div style={{ display: 'flex', gap: 8 }}><button className="primary" type="submit">{editingId ? <><Save size={17} /> Salvar alterações</> : <><Plus size={17} /> Adicionar ingrediente</>}</button>{editingId ? <button className="secondary" type="button" onClick={closeForm}><X size={16} /> Cancelar</button> : data.ingredients.length > 0 && <button className="secondary" type="button" onClick={closeForm}><X size={16} /> Fechar</button>}</div>
         </form>
         {adjusting && <MeasuresDialog ingredientName={name} cupSizeMl={cup} initial={{ ref: effRef, cup: cupGrams, unit: unitGrams }} updateAvailable={refUpdate} onUpdateReference={current ? () => updateReference(current) : undefined} onApply={apply} onCancel={() => setAdjusting(false)} />}
-      </section>
+      </section>}
       <section className="card"><h2 className="section-title">Ingredientes cadastrados ({data.ingredients.length})</h2>
-        {data.ingredients.length ? <div className="table-wrap"><table><thead><tr><th>Ingrediente</th><th>Compra</th><th>Preço</th><th></th></tr></thead><tbody>{data.ingredients.map(i => <tr key={i.id}><td>{i.name}</td><td>{i.purchaseQuantity} {i.unit}{measureLines(i, cup).map(l => <div key={l} className="muted" style={{ fontSize: 12 }}>{l}</div>)}</td><td>{money(i.purchasePrice)}</td><td style={{ whiteSpace: 'nowrap' }}><button aria-label={`Editar ${i.name}`} title="Editar" className="inline-icon" onClick={() => startEdit(i.id)}><Pencil size={15} /></button><button aria-label={`Excluir ${i.name}`} title="Excluir" className="inline-icon" onClick={() => removeIngredient(i.id)}><Trash2 size={15} /></button></td></tr>)}</tbody></table></div> : <div className="empty"><ShoppingBasket size={30} />Sua lista de ingredientes aparecerá aqui.</div>}
+        {data.ingredients.length ? <ul className="item-list" aria-label="Ingredientes cadastrados">
+          <li className="item-list-head" aria-hidden="true"><span>Ingrediente</span><span>Compra</span><span>Preço pago</span><span /></li>
+          {[...data.ingredients].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(i => <li key={i.id} className={`item-row${editingId === i.id ? ' is-editing' : ''}`}>
+            <div className="item-main"><strong>{i.name}</strong>{measureLines(i, cup).map(l => <span key={l} className="muted">{l}</span>)}</div>
+            <span className="item-cell" data-label="Compra">{i.purchaseQuantity} {i.unit}</span>
+            <span className="item-cell" data-label="Preço pago">{money(i.purchasePrice)}</span>
+            <RowMenu label={`Ações de ${i.name}`} actions={[
+              { label: 'Editar', ariaLabel: `Editar ${i.name}`, icon: <Pencil size={15} aria-hidden="true" />, onSelect: () => startEdit(i.id) },
+              { label: 'Excluir', ariaLabel: `Excluir ${i.name}`, icon: <Trash2 size={15} aria-hidden="true" />, danger: true, onSelect: () => removeIngredient(i.id) },
+            ]} />
+          </li>)}</ul> : <div className="empty"><ShoppingBasket size={30} />Sua lista de ingredientes aparecerá aqui.</div>}
       </section>
     </div>
     <p className="footnote">Na receita você pode usar g, kg, mL, L, xícara, colheres e unidades; o app converte para a unidade de compra. Se faltar uma equivalência, o app avisa qual e não calcula o custo daquele ingrediente.</p>

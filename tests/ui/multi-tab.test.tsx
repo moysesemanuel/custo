@@ -36,7 +36,7 @@ const settle = () => act(async () => { await new Promise(r => setTimeout(r, 120)
 const banner = (t: Tab) => within(t.c).queryByRole('region', { name: 'Modo de consulta' });
 const nav = async (t: Tab, name: string) => { await userEvent.setup().click(within(within(t.c).getByRole('navigation', { name: 'Navegação principal' })).getByRole('button', { name })); };
 const editPrice = async (t: Tab, name: string, price: string) => {
-  const u = userEvent.setup(); await nav(t, 'Ingredientes'); await u.click(within(t.c).getByRole('button', { name: `Editar ${name}` }));
+  const u = userEvent.setup(); await nav(t, 'Ingredientes'); await u.click(within(t.c).getByRole('button', { name: `Ações de ${name}` })); await u.click(within(t.c).getByRole('menuitem', { name: `Editar ${name}` }));
   fireEvent.change(within(t.c).getByLabelText('Preço pago (R$)'), { target: { value: price } }); await u.click(within(t.c).getByRole('button', { name: /Salvar alterações/ }));
 };
 const disk = async () => loadData();
@@ -53,12 +53,12 @@ describe('Duas abas (Web Locks): uma edita, a outra consulta', () => {
   it('B/C: a edição da aba A aparece na aba B sem recarregar; ao assumir, B edita OUTRO ingrediente e as duas edições ficam no disco', async () => {
     await saveData(base()); const A = await openTab(); await settle(); const B = await openTab(); await settle();
     await editPrice(A, 'Ingrediente a', '9'); await within(A.c).findByText(/Ingrediente atualizado/); await waitFor(async () => expect(await price('a')).toBe(9));
-    await nav(B, 'Ingredientes'); await waitFor(() => expect(within(B.c).getByText('Ingrediente a', { selector: 'td' }).closest('tr')!.textContent).toMatch(/9,00/)); // chegou sem recarregar (aviso entre abas)
+    await nav(B, 'Ingredientes'); await waitFor(() => expect(within(B.c).getByText('Ingrediente a', { selector: '.item-main strong' }).closest('li')!.textContent).toMatch(/9,00/)); // chegou sem recarregar (aviso entre abas)
     await userEvent.setup().click(within(B.c).getByRole('button', { name: 'Editar nesta aba' })); await settle();
     expect(banner(B)).toBeNull(); expect(banner(A)).not.toBeNull(); // os papéis trocaram
     await editPrice(B, 'Ingrediente b', '7'); await within(B.c).findByText(/Ingrediente atualizado/); await waitFor(async () => expect(await price('b')).toBe(7));
     expect(await price('a')).toBe(9); // a edição da aba A NÃO foi apagada (antes da correção, ficava 6)
-    await nav(A, 'Ingredientes'); await waitFor(() => expect(within(A.c).getByText('Ingrediente b', { selector: 'td' }).closest('tr')!.textContent).toMatch(/7,00/));
+    await nav(A, 'Ingredientes'); await waitFor(() => expect(within(A.c).getByText('Ingrediente b', { selector: '.item-main strong' }).closest('li')!.textContent).toMatch(/7,00/));
   }, 40000);
 
   it('D: o MESMO ingrediente em sequência (A → B): vale a última edição e nada fica pela metade', async () => {
@@ -80,7 +80,7 @@ describe('Duas abas (Web Locks): uma edita, a outra consulta', () => {
   it('uma aba aberta depois enxerga tudo o que já foi gravado (persistência após recarregar)', async () => {
     await saveData(base()); const A = await openTab(); await settle(); await editPrice(A, 'Ingrediente a', '9'); await waitFor(async () => expect(await price('a')).toBe(9));
     A.close(); const C = await openTab(); await settle(); await nav(C, 'Ingredientes');
-    expect(within(C.c).getByText('Ingrediente a', { selector: 'td' }).closest('tr')!.textContent).toMatch(/9,00/); expect(banner(C)).toBeNull();
+    expect(within(C.c).getByText('Ingrediente a', { selector: '.item-main strong' }).closest('li')!.textContent).toMatch(/9,00/); expect(banner(C)).toBeNull();
   }, 30000);
 
   it('Configurações e Backup só funcionam na aba que edita (a consulta mostra uma explicação, sem ações)', async () => {

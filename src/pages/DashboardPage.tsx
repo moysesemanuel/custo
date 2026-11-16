@@ -2,7 +2,8 @@ import { ArrowRight, CalendarDays, ChartNoAxesCombined, CheckCircle2, ClipboardC
 import { money } from '../domain/pricing';
 import { orderCostBasis, orderTotalCost } from '../domain/orderCost';
 import { balanceDue, orderTotal } from '../domain/payments';
-import { brDate, type Page, type PageProps } from '../utils';
+import { brDate, lastBackupAt, localToday, type Page, type PageProps } from '../utils';
+import { MonthlyChart } from '../features/dashboard/MonthlyChart';
 import { useAccount } from '../account/AccountContext';
 import { firstName } from '../../shared/personName';
 
@@ -30,20 +31,25 @@ export function DashboardPage({ data, focus }: PageProps) {
     { label: 'Cadastre seus ingredientes', ok: data.ingredients.length > 0, pg: 'ingredients' },
     { label: 'Monte sua primeira receita', ok: data.recipes.length > 0, pg: 'recipes' },
     { label: 'Registre uma encomenda', ok: data.orders.length > 0, pg: 'new-order' },
-    { label: 'Faça um backup dos dados', ok: false, pg: 'backup' },
+    { label: 'Faça um backup dos dados', ok: !!lastBackupAt(), pg: 'backup' },
   ];
+  const allDone = steps.every(x => x.ok);
   return <>
     <div className="head"><div><div className="eyebrow">Painel principal</div><h1>{greeting}</h1><p className="muted">{fresh ? 'Que bom ter você aqui.' : 'Que bom ter você de volta.'} Acompanhe suas encomendas, custos e valores a receber.</p></div><button className="primary" onClick={() => focus('new-order')}><Plus size={17} /> Nova encomenda</button></div>
-    <div className="welcome"><div><h2>Seu negócio, no caminho certo.</h2><p>Cadastre seus ingredientes, monte receitas e calcule preços antes de aceitar pedidos. Comece por uma tarefa de cada vez.</p></div><button className="primary" onClick={() => focus(data.ingredients.length ? 'recipes' : 'ingredients')}>{data.ingredients.length ? 'Criar receita' : 'Cadastrar ingrediente'} <ArrowRight size={17} /></button></div>
+    {!allDone && <div className="welcome"><div><h2>Seu negócio, no caminho certo.</h2><p>Cadastre seus ingredientes, monte receitas e calcule preços antes de aceitar pedidos. Comece por uma tarefa de cada vez.</p></div><button className="primary" onClick={() => focus(data.ingredients.length ? 'recipes' : 'ingredients')}>{data.ingredients.length ? 'Criar receita' : 'Cadastrar ingrediente'} <ArrowRight size={17} /></button></div>}
     <div className="cards">
       <div className="card metric-card"><span className="icon-box"><ClipboardCheck size={20} /></span><span className="metric-label">Pedidos em aberto</span><span className="metric">{openOrders.length.toString().padStart(2, '0')}</span></div>
       <div className="card metric-card"><span className="icon-box"><Wallet size={20} /></span><span className="metric-label">A receber*</span><span className="metric">{money(amountToReceive)}</span></div>
       <div className="card metric-card"><span className="icon-box"><CalendarDays size={20} /></span><span className="metric-label">Pedidos confirmados</span><span className="metric">{confirmed.length.toString().padStart(2, '0')}</span></div>
       <div className="card metric-card"><span className="icon-box"><ChartNoAxesCombined size={20} /></span><span className="metric-label">Saldo estimado*</span><span className="metric">{costUnavailable ? '—' : money(totalRevenue - estimatedCost)}</span></div>
     </div>
+    {/* Com os primeiros passos feitos, o gráfico divide a linha com as últimas encomendas; antes, ocupa a linha inteira. */}
+    {!allDone && <div style={{ marginBottom: 19 }}><MonthlyChart data={data} today={localToday()} /></div>}
     <div className="two">
+      {allDone && <MonthlyChart data={data} today={localToday()} />}
       <section className="card"><h2 className="section-title">Últimas encomendas</h2><p className="muted">Pedidos cadastrados recentemente</p>{data.orders.length ? <div className="table-wrap"><table><thead><tr><th>Cliente</th><th>Entrega</th><th>Valor</th><th>Status</th></tr></thead><tbody>{data.orders.slice(-5).reverse().map(o => <tr key={o.id}><td>{o.customer}</td><td>{brDate(o.deliveryDate)}</td><td>{money(orderTotal(o))}</td><td><span className="tag">{o.status}</span></td></tr>)}</tbody></table></div> : <div className="empty"><ClipboardCheck size={30} />Nenhuma encomenda cadastrada ainda.</div>}</section>
-      <section className="card"><h2 className="section-title">Primeiros passos</h2><p className="muted">Configure suas informações para começar</p><div className="stack" style={{ marginTop: 23 }}>{steps.map(x => <button key={x.label} className="secondary" onClick={() => focus(x.pg)} style={{ justifyContent: 'space-between', width: '100%', textAlign: 'left' }}>{x.label}{x.ok ? <CheckCircle2 size={18} color="var(--color-success)" /> : <ArrowRight size={16} />}</button>)}</div></section>
+      {/* Some quando todos os passos estão feitos (o backup conta a partir do primeiro download neste aparelho). */}
+      {!allDone && <section className="card"><h2 className="section-title">Primeiros passos</h2><p className="muted">Configure suas informações para começar</p><div className="stack" style={{ marginTop: 23 }}>{steps.map(x => <button key={x.label} className="secondary" onClick={() => focus(x.pg)} style={{ justifyContent: 'space-between', width: '100%', textAlign: 'left' }}>{x.label}{x.ok ? <CheckCircle2 size={18} color="var(--color-success)" /> : <ArrowRight size={16} />}</button>)}</div></section>}
     </div>
     <p className="footnote">*Indicadores estimados: saldos ainda não representam lucro líquido, fluxo de caixa nem impostos efetivos. O valor a receber desconta o sinal e os recebimentos registrados.{costUnavailable ? ' O saldo estimado não é exibido porque há receita de pedido confirmado sem custo calculável (falta alguma equivalência de medida).' : ''}{!costUnavailable && withoutRecord > 0 ? ` ${withoutRecord} pedido(s) antigo(s) não têm custo registrado e entram com o custo atual da receita (estimativa).` : ''}</p>
   </>;

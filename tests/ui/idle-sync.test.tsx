@@ -85,7 +85,7 @@ describe('Gatilhos legítimos continuam funcionando', () => {
     const u = userEvent.setup(); await boot({ strict: true }); await settle();
     const before = syncCalls('POST').length;
     await u.click(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('button', { name: 'Ingredientes' }));
-    await u.click(screen.getByRole('button', { name: 'Editar Ingrediente a' }));
+    await u.click(screen.getByRole('button', { name: 'Ações de Ingrediente a' })); await u.click(screen.getByRole('menuitem', { name: 'Editar Ingrediente a' }));
     fireEvent.change(screen.getByLabelText('Preço pago (R$)'), { target: { value: '9' } }); await u.click(screen.getByRole('button', { name: /Salvar alterações/ }));
     await waitFor(() => expect(srv.table('ingredients').find(r => r.id === 'a')?.purchase_price).toBe(9), { timeout: 5000 });
     expect(syncCalls('POST').length).toBe(before + 1);
@@ -114,7 +114,7 @@ describe('Gatilhos legítimos continuam funcionando', () => {
     const u = userEvent.setup(); await boot({ strict: true }); await settle();
     offline = true; const n = syncCalls().length;
     await u.click(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('button', { name: 'Ingredientes' }));
-    await u.click(screen.getByRole('button', { name: 'Editar Ingrediente b' })); fireEvent.change(screen.getByLabelText('Preço pago (R$)'), { target: { value: '15' } }); await u.click(screen.getByRole('button', { name: /Salvar alterações/ }));
+    await u.click(screen.getByRole('button', { name: 'Ações de Ingrediente b' })); await u.click(screen.getByRole('menuitem', { name: 'Editar Ingrediente b' })); fireEvent.change(screen.getByLabelText('Preço pago (R$)'), { target: { value: '15' } }); await u.click(screen.getByRole('button', { name: /Salvar alterações/ }));
     await idle(2600);
     const attempts = syncCalls().slice(n); expect(attempts.length).toBeGreaterThanOrEqual(3); expect(attempts.length).toBeLessThanOrEqual(8); // mocks: 60, 120, 240, 480 ms…
     const gaps = attempts.slice(1).map((a, i) => a.t - attempts[i].t); expect(gaps.at(-1)!).toBeGreaterThanOrEqual(gaps[1] ?? 0); // não encurta

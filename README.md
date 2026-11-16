@@ -97,6 +97,9 @@ npm test
 
 O app é local-first e **funciona inteiro sem conta e sem internet**. Existe um serviço remoto mínimo, em `worker/` (Cloudflare Workers + D1), usado só quando a pessoa entra em uma conta liberada pela sua licença:
 
+- **Visão geral:** saudação pelo nome, indicadores, gráfico **Vendas por mês** (últimos 6 meses, pela data de entrega dos pedidos confirmados; custo e saldo estimados, com tabela) e últimas encomendas. Os **primeiros passos** e a boas-vindas somem quando tudo estiver feito (o backup conta a partir do primeiro download no aparelho).
+- **Ingredientes:** a tela mostra a lista; o formulário abre em "Novo ingrediente" (fica aberto para cadastrar vários) ou em "Editar", pelo botão ⋯ de cada item (Editar / Excluir).
+- **Capacidade diária** em horas (5, 4,5 ou 4:30), guardada em minutos.
 - **Menu da conta** (ícone de perfil no topo; no celular, no cabeçalho): nome e e-mail de quem está conectado, atalho para Configurações e **Sair**. A Visão geral cumprimenta a pessoa pelo nome cadastrado no painel administrativo.
 - **Conta** (Configurações): login sem senha por código de 8 dígitos enviado ao e-mail da compra, até **2 dispositivos** (o terceiro pode substituir um dos antigos), remoção de dispositivos e sessão em cookie `HttpOnly` com proteção CSRF.
 - **Sincronização:** o servidor guarda a versão oficial dos dados e o dispositivo mantém cópia offline. Alterações offline são enviadas depois; edições do mesmo item em dois dispositivos nunca se perdem em silêncio (a versão do servidor vale e a sua fica guardada para você refazer). Dados de outra conta no mesmo dispositivo exigem decisão do usuário.

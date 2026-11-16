@@ -45,7 +45,11 @@ export function tryApply(data: DataSet, update: (fn: (d: DataSet) => DataSet) =>
 }
 
 /** Baixa um backup JSON dos dados (usado na página de Backup e na tela de acesso). */
+const LAST_BACKUP_KEY = 'pedidocerto.lastBackupAt';
+/** Quando este aparelho baixou o último backup (null se nunca, ou se o navegador não deixa guardar). */
+export function lastBackupAt(): string | null { try { return localStorage.getItem(LAST_BACKUP_KEY); } catch { return null; } }
 export function downloadBackup(data: unknown): void {
+  try { localStorage.setItem(LAST_BACKUP_KEY, new Date().toISOString()); } catch { /* sem armazenamento: só não marca o passo */ }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

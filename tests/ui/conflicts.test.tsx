@@ -52,7 +52,7 @@ async function conflictScenario(u: ReturnType<typeof U>, s: Srv) {
   await u.click(screen.getByRole('button', { name: /Adicionar ingrediente/ }));
   await waitFor(() => expect(dotLabel()).toMatch(/Sincronizado/), { timeout: 4000 });
   s.offline = true;                                                          // janela anônima: Network → Offline
-  await u.click(screen.getByRole('button', { name: 'Editar Farinha de trigo' }));
+  await u.click(screen.getByRole('button', { name: 'Ações de Farinha de trigo' })); await u.click(screen.getByRole('menuitem', { name: 'Editar Farinha de trigo' }));
   fireEvent.change(screen.getByLabelText('Preço pago (R$)'), { target: { value: '12' } });
   await u.click(screen.getByRole('button', { name: /Salvar alterações/ }));
   await screen.findByText(/Ingrediente atualizado/);
@@ -106,10 +106,10 @@ describe('Conflito na interface', () => {
     await u.click(within(banner()!).getByRole('button', { name: /Acessar conflitos/ }));
     const dlg = await screen.findByRole('dialog');
     await u.click(within(dlg).getByRole('button', { name: 'Manter versão da nuvem' }));
-    expect(screen.queryByText(/13,00/, { selector: 'td' })).toBeNull(); // ainda não aplicado
+    expect(screen.queryByText(/13,00/, { selector: '.item-cell' })).toBeNull(); // ainda não aplicado
     await u.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Confirmar' }));
     await waitFor(() => expect(banner()).toBeNull());
-    await screen.findByText(/13,00/, { selector: 'td' });
+    await screen.findByText(/13,00/, { selector: '.item-cell' });
     expect(s.store.get([...s.store.keys()][0])!.data.purchasePrice).toBe(13);
   }, 30000);
 
