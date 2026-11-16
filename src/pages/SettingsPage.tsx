@@ -5,7 +5,7 @@ import { SyncPanel } from '../features/account/SyncPanel';
 import { PublishedLinks } from '../features/sharing/PublishedLinks';
 import { Field } from '../components/Field';
 import { normalizePhone } from '../../shared/publicQuote';
-import { WEEKDAY_NAMES, DEFAULT_WORK_WEEKDAYS } from '../domain/schedule';
+import { WEEKDAY_NAMES, DEFAULT_WORK_WEEKDAYS, formatMinutes, minutesToHoursInput, parseHours } from '../domain/schedule';
 import { withSettings, type PageProps } from '../utils';
 
 
@@ -13,15 +13,20 @@ function BusinessSettings({ data, update, inform }: PageProps) {
   const s = data.settings;
   const [name, setName] = useState(s?.businessName ?? '');
   const [phone, setPhone] = useState(s?.businessPhone ?? '');
-  const [capacity, setCapacity] = useState(s?.dailyCapacityMinutes !== undefined ? String(s.dailyCapacityMinutes) : '');
+  const [capacity, setCapacity] = useState(s?.dailyCapacityMinutes !== undefined ? minutesToHoursInput(s.dailyCapacityMinutes) : '');
   const [days, setDays] = useState<number[]>(s?.workWeekdays ?? DEFAULT_WORK_WEEKDAYS);
+  const parsedCap = parseHours(capacity);
+  const capacityHint = parsedCap === undefined ? 'Quantas horas por dia você consegue dedicar à produção. Ex.: 5 (cinco horas) ou 4:30 (quatro horas e meia).'
+    : parsedCap === null ? 'Não entendi. Use horas, por exemplo 5, 4,5 ou 4:30.'
+    : parsedCap > 0 && parsedCap < 60 ? `Isso é só ${formatMinutes(parsedCap)} por dia. Se quis dizer horas, digite por exemplo 5.`
+    : `${formatMinutes(parsedCap)} por dia.`;
   function save(e: FormEvent) {
     e.preventDefault();
     const normalizedPhone = phone.trim() ? normalizePhone(phone) : '';
     if (phone.trim() && !normalizedPhone) return inform('Telefone inválido. Use DDD e número, ex.: (41) 99999-0000.');
     if (name.trim().length > 80) return inform('O nome do negócio pode ter até 80 caracteres.');
-    const cap = capacity.trim() === '' ? undefined : Number(capacity.replace(',', '.'));
-    if (cap !== undefined && !(Number.isInteger(cap) && cap >= 0 && cap <= 1440)) return inform('A capacidade diária deve ser um número inteiro de minutos (0 a 1440).');
+    const cap = parseHours(capacity);
+    if (cap === null) return inform('Informe a capacidade diária em horas, de 0 a 24. Ex.: 5, 4,5 ou 4:30.');
     if (!days.length) return inform('Escolha ao menos um dia de trabalho.');
     update(d => { const base = withSettings(d, {}); const { businessName, businessPhone, dailyCapacityMinutes, ...rest } = base.settings!; void businessName; void businessPhone; void dailyCapacityMinutes;
       return { ...base, settings: { ...rest, ...(name.trim() ? { businessName: name.trim() } : {}), ...(normalizedPhone ? { businessPhone: normalizedPhone } : {}), ...(cap !== undefined ? { dailyCapacityMinutes: cap } : {}), workWeekdays: [...days].sort((a, b) => a - b) } }; });
@@ -31,7 +36,8 @@ function BusinessSettings({ data, update, inform }: PageProps) {
     <form className="stack" onSubmit={save}>
       <Field label="Nome do negócio (aparece nos orçamentos)"><input value={name} maxLength={80} onChange={e => setName(e.target.value)} placeholder="Ex.: Doces da Bia" /></Field>
       <Field label="Telefone/WhatsApp do negócio (aparece nos orçamentos)"><input inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="(41) 99999-0000" /></Field>
-      <Field label="Capacidade de produção por dia (minutos)"><input type="number" min="0" max="1440" step="1" value={capacity} onChange={e => setCapacity(e.target.value)} placeholder="Ex.: 240 (4 horas)" /></Field>
+      <div><Field label="Horas de produção por dia"><input inputMode="decimal" value={capacity} maxLength={8} onChange={e => setCapacity(e.target.value)} placeholder="Ex.: 5 ou 4:30" aria-describedby="capacity-hint" /></Field>
+        <p id="capacity-hint" className="form-subtitle" style={{ margin: '6px 0 0' }} aria-live="polite">{capacityHint}</p></div>
       <div><label>Dias de trabalho</label><div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{WEEKDAY_NAMES.map((n, i) => <label key={n} style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500, margin: 0, fontSize: 13 }}><input type="checkbox" style={{ width: 16, height: 16 }} checked={days.includes(i)} onChange={e => setDays(list => (e.target.checked ? [...list, i] : list.filter(x => x !== i)))} /> {n.slice(0, 3)}</label>)}</div></div>
       <p className="form-subtitle" style={{ margin: 0 }}>O telefone fica visível para quem abrir o link de um orçamento. A capacidade é usada só para estimar prazos (não garante entrega).</p>
       <button className="primary" type="submit"><ShieldCheck size={17} /> Salvar</button>

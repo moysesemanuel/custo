@@ -108,3 +108,24 @@ export function workloadForecast(data: DataSet, today: string, days = 14): (Fore
 }
 
 export const formatMinutes = (m: number): string => (m < 60 ? `${Math.round(m)} min` : `${Math.floor(m / 60)} h${Math.round(m % 60) ? ` ${Math.round(m % 60)} min` : ''}`);
+
+/**
+ * Capacidade diária digitada em HORAS (guardada em minutos): "5", "4,5", "4.5", "4:30", "4h30", "4h".
+ * Devolve os minutos (inteiros, 0 a 1440), `undefined` se vazio, ou `null` se não der para entender.
+ */
+export function parseHours(text: string): number | undefined | null {
+  const t = text.trim().toLowerCase().replace(/\s+/g, '');
+  if (!t) return undefined;
+  let minutes: number;
+  const hm = /^(\d{1,2})(?::|h)(\d{1,2})?(?:min|m)?$/.exec(t);
+  if (hm) {
+    const m = hm[2] === undefined ? 0 : Number(hm[2]);
+    if (m >= 60) return null;
+    minutes = Number(hm[1]) * 60 + m;
+  } else if (/^\d{1,2}(?:[.,]\d{1,2})?$/.test(t)) minutes = Math.round(Number(t.replace(',', '.')) * 60);
+  else return null;
+  return minutes >= 0 && minutes <= 1440 ? minutes : null;
+}
+
+/** Minutos → texto para o campo em horas: 300 → "5", 270 → "4:30", 5 → "0:05". */
+export const minutesToHoursInput = (m: number): string => (m % 60 === 0 ? String(m / 60) : `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`);

@@ -13,7 +13,7 @@ const FIELD: Record<string, { label: string; money?: boolean }> = {
   extraTotal: { label: 'Custos extras', money: true }, desiredMargin: { label: 'Margem desejada (%)' }, prepMinutes: { label: 'Minutos de preparo' },
   customer: { label: 'Cliente' }, recipeId: { label: 'Receita' }, quantity: { label: 'Quantidade' }, unitPrice: { label: 'Preço unitário', money: true }, deliveryDate: { label: 'Entrega' }, packagingCharge: { label: 'Cobrança de embalagens', money: true },
   status: { label: 'Situação' }, deposit: { label: 'Sinal', money: true }, createdAt: { label: 'Criada em' }, costSnapshot: { label: 'Custo registrado' }, payments: { label: 'Recebimentos' },
-  catalogRef: { label: 'Medidas de referência' }, cupSizeMl: { label: 'Tamanho da xícara (ml)' }, businessName: { label: 'Nome do negócio' }, businessPhone: { label: 'Telefone' }, dailyCapacityMinutes: { label: 'Minutos por dia' }, workWeekdays: { label: 'Dias de trabalho' },
+  catalogRef: { label: 'Medidas de referência' }, cupSizeMl: { label: 'Tamanho da xícara (ml)' }, businessName: { label: 'Nome do negócio' }, businessPhone: { label: 'Telefone' }, dailyCapacityMinutes: { label: 'Capacidade diária (minutos)' }, workWeekdays: { label: 'Dias de trabalho' },
 };
 
 type ItemLike = { recipeName?: string; recipeId?: string; quantity?: number; unitPrice?: number };

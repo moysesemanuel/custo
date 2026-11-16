@@ -35,7 +35,7 @@ describe('Acessibilidade básica', () => {
     await go('Nova encomenda');
     for (const label of ['Nome do cliente', 'Receita', 'Quantidade', 'Preço de venda unitário (R$)', 'Data de entrega', 'Sinal recebido (opcional)']) expect(screen.getByLabelText(label), label).toBeTruthy();
     await go('Configurações');
-    for (const label of ['Nome do negócio (aparece nos orçamentos)', 'Telefone/WhatsApp do negócio (aparece nos orçamentos)', 'Capacidade de produção por dia (minutos)']) expect(screen.getByLabelText(label), label).toBeTruthy();
+    for (const label of ['Nome do negócio (aparece nos orçamentos)', 'Telefone/WhatsApp do negócio (aparece nos orçamentos)', 'Horas de produção por dia']) expect(screen.getByLabelText(label), label).toBeTruthy();
   });
   it('mensagens de retorno são anunciadas (role=status) e nenhum botão fica sem nome', async () => {
     const u = userEvent.setup();
