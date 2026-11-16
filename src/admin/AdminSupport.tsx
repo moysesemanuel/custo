@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Send, UserRound } from 'lucide-react';
-import { SUPPORT_ASSISTANT } from '../support';
+import { ASSISTANTS, assistantOf } from '../../shared/supportPersona';
 import { ADMIN_MESSAGES, type AdminClient, type AdminFailure, type SupportInboxTicket } from './adminClient';
 
 const KIND: Record<SupportInboxTicket['kind'], [string, string]> = { question: ['Dúvida', 'tag'], suggestion: ['Sugestão', 'tag green'], complaint: ['Reclamação', 'tag red'] };
@@ -16,7 +16,7 @@ export function SupportPanel({ api, fail, inform }: { api: AdminClient; fail: (r
   useEffect(() => { void load(); }, [load]);
   const t = data?.tickets.find(x => x.id === selected);
   return <>
-    <div className="head"><div><h1>Suporte</h1><p className="muted">Dúvidas, sugestões e reclamações enviadas pelo botão de suporte do app. Dúvidas passam antes pela {SUPPORT_ASSISTANT.name}, a assistente de IA.</p></div>
+    <div className="head"><div><h1>Suporte</h1><p className="muted">Dúvidas, sugestões e reclamações enviadas pelo botão de suporte do app. Dúvidas passam antes pela Bianca ou pelo Davi, os assistentes de IA.</p></div>
       <div className="admin-actions"><select aria-label="Filtrar conversas" value={filter} onChange={e => { setFilter(e.target.value as 'open' | 'all'); setSelected(null); }} style={{ height: 44 }}><option value="open">Aguardando você{data ? ` (${data.openCount})` : ''}</option><option value="all">Todas (últimas 50)</option></select><button className="secondary" onClick={() => void load()}>Atualizar</button></div></div>
     {err && <div className="notice error" role="alert">{err}</div>}
     <div className="support-admin">
@@ -42,7 +42,7 @@ function Conversation({ t, api, fail, done }: { t: SupportInboxTicket; api: Admi
     <h2 className="section-title" style={{ margin: 0 }}>{KIND[t.kind][0]} de {t.customer.name ?? t.customer.email}</h2>
     {t.customer.email && <p className="muted" style={{ margin: 0 }}>{t.customer.email} · aberta em {when(t.createdAt)}</p>}
     <ul className="support-thread">{t.messages.map(m => <li key={m.id} className={`msg ${m.author === 'user' ? 'customer' : m.author}`}>
-      <span className="msg-who">{m.author === 'user' ? 'Cliente' : m.author === 'ai' ? <><img className="support-avatar" src={SUPPORT_ASSISTANT.avatar} alt="" width={22} height={22} /> {SUPPORT_ASSISTANT.name} (IA)</> : <><UserRound size={13} aria-hidden="true" /> Equipe</>} · {when(m.createdAt)}</span>
+      <span className="msg-who">{m.author === 'user' ? 'Cliente' : m.author === 'ai' ? <><img className="support-avatar" src={ASSISTANTS[assistantOf(t.assistant)].avatar} alt="" width={22} height={22} /> {ASSISTANTS[assistantOf(t.assistant)].name} (IA)</> : <><UserRound size={13} aria-hidden="true" /> Equipe</>} · {when(m.createdAt)}</span>
       <div className="msg-body">{m.body}</div></li>)}</ul>
     {t.status !== 'closed' && <form className="stack" onSubmit={reply} style={{ gap: 10 }}>
       <label htmlFor="admin-support-reply" style={{ margin: 0 }}>Sua resposta</label>

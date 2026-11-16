@@ -73,8 +73,8 @@ export async function adminRoute(request: Request, env: SessionEnv & SupportEnv,
   if (sup && !sup[1] && method === 'GET') {
     const status = url.searchParams.get('status');
     const filter = status === 'open' ? "WHERE t.status = 'open'" : '';
-    const rows = (await env.DB.prepare(`SELECT t.id, t.kind, t.status, t.created_at, t.updated_at, t.unread_for_user, u.email, l.holder_name
-       FROM support_tickets t LEFT JOIN users u ON u.id = t.user_id LEFT JOIN licenses l ON l.user_id = t.user_id ${filter} ORDER BY t.updated_at DESC LIMIT 50`).bind().all<{ id: string; kind: 'question' | 'suggestion' | 'complaint'; status: 'open' | 'answered' | 'closed'; created_at: string; updated_at: string; unread_for_user: number; email: string | null; holder_name: string | null }>()).results;
+    const rows = (await env.DB.prepare(`SELECT t.id, t.kind, t.status, t.created_at, t.updated_at, t.unread_for_user, t.assistant, u.email, l.holder_name
+       FROM support_tickets t LEFT JOIN users u ON u.id = t.user_id LEFT JOIN licenses l ON l.user_id = t.user_id ${filter} ORDER BY t.updated_at DESC LIMIT 50`).bind().all<{ id: string; kind: 'question' | 'suggestion' | 'complaint'; status: 'open' | 'answered' | 'closed'; created_at: string; updated_at: string; unread_for_user: number; assistant: 'bianca' | 'davi' | null; email: string | null; holder_name: string | null }>()).results;
     const ids = rows.map(r => r.id);
     const msgs = ids.length ? (await env.DB.prepare(`SELECT id, ticket_id, author, body, created_at FROM support_messages WHERE ticket_id IN (${ids.map((_, i) => `?${i + 1}`).join(',')}) ORDER BY rowid`).bind(...ids).all<{ id: string; ticket_id: string; author: 'user' | 'ai' | 'team'; body: string; created_at: string }>()).results : [];
     const open = await env.DB.prepare("SELECT COUNT(*) AS n FROM support_tickets WHERE status = 'open'").bind().first<{ n: number }>();

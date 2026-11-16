@@ -4,6 +4,7 @@ import { consumeRateLimit, windowCount, type D1Like } from './store';
 import { randomToken } from './accounts';
 import { askSupportAi, type SupportAiEnv, type Turn } from './supportAi';
 import { firstName } from '../../shared/personName';
+import { assistantOf, nextAssistant, type AssistantId } from '../../shared/supportPersona';
 
 export type SupportEnv = SessionEnv & SupportAiEnv & { SUPPORT_AI_DAILY_LIMIT?: string };
 type Deps = { now: () => Date };
@@ -18,7 +19,7 @@ const messageId = () => `smg_${randomToken(9)}`;
 const aiDailyLimit = (env: SupportEnv) => { const n = Number(env.SUPPORT_AI_DAILY_LIMIT); return Number.isInteger(n) && n >= 0 && n <= 10_000 ? n : SUPPORT_LIMITS.aiPerDayDefault; };
 const cleanBody = (v: unknown): string | null => { if (typeof v !== 'string') return null; const t = v.replace(/\r\n/g, '\n').trim(); return t && t.length <= SUPPORT_LIMITS.bodyMax ? t : null; };
 
-type TicketRow = { id: string; kind: Kind; status: 'open' | 'answered' | 'closed'; created_at: string; updated_at: string; unread_for_user: number };
+type TicketRow = { id: string; kind: Kind; status: 'open' | 'answered' | 'closed'; created_at: string; updated_at: string; unread_for_user: number; assistant?: AssistantId | null };
 type MessageRow = { id: string; ticket_id: string; author: Turn['author']; body: string; created_at: string };
 
 async function messagesOf(db: D1Like, ids: string[]): Promise<Map<string, MessageRow[]>> {
@@ -28,7 +29,7 @@ async function messagesOf(db: D1Like, ids: string[]): Promise<Map<string, Messag
   for (const r of rows) map.set(r.ticket_id, [...(map.get(r.ticket_id) ?? []), r]);
   return map;
 }
-export const publicTicket = (t: TicketRow, msgs: MessageRow[]) => ({ id: t.id, kind: t.kind, status: t.status, createdAt: t.created_at, updatedAt: t.updated_at, unread: t.unread_for_user > 0,
+export const publicTicket = (t: TicketRow, msgs: MessageRow[]) => ({ id: t.id, kind: t.kind, status: t.status, assistant: assistantOf(t.assistant), createdAt: t.created_at, updatedAt: t.updated_at, unread: t.unread_for_user > 0,
   messages: msgs.map(m => ({ id: m.id, author: m.author, body: m.body, createdAt: m.created_at })) });
 
 async function auth(request: Request, env: SupportEnv, now: Date, write: boolean) {
@@ -60,7 +61,7 @@ async function answerWithAi(env: SupportEnv, ticketIdValue: string, turns: Turn[
 }
 
 async function loadTicket(db: D1Like, id: string, userId: string) {
-  return db.prepare('SELECT id, kind, status, created_at, updated_at, unread_for_user FROM support_tickets WHERE id = ?1 AND user_id = ?2').bind(id, userId).first<TicketRow>();
+  return db.prepare('SELECT id, kind, status, created_at, updated_at, unread_for_user, assistant FROM support_tickets WHERE id = ?1 AND user_id = ?2').bind(id, userId).first<TicketRow>();
 }
 
 /** Rotas do cliente: GET /api/support, POST /api/support, POST /api/support/:id/messages, POST /api/support/:id/escalate, POST /api/support/:id/read. */
@@ -76,7 +77,7 @@ export async function supportRoute(request: Request, env: SupportEnv, deps: Deps
   if (!a.ok) return a.res;
 
   if (path === '/api/support' && method === 'GET') {
-    const tickets = (await env.DB.prepare('SELECT id, kind, status, created_at, updated_at, unread_for_user FROM support_tickets WHERE user_id = ?1 ORDER BY updated_at DESC LIMIT ?2').bind(a.userId, SUPPORT_LIMITS.ticketsListed).all<TicketRow>()).results;
+    const tickets = (await env.DB.prepare('SELECT id, kind, status, created_at, updated_at, unread_for_user, assistant FROM support_tickets WHERE user_id = ?1 ORDER BY updated_at DESC LIMIT ?2').bind(a.userId, SUPPORT_LIMITS.ticketsListed).all<TicketRow>()).results;
     const msgs = await messagesOf(env.DB, tickets.map(t => t.id));
     return json({ tickets: tickets.map(t => publicTicket(t, msgs.get(t.id) ?? [])) });
   }
@@ -93,8 +94,9 @@ export async function supportRoute(request: Request, env: SupportEnv, deps: Deps
     const text = cleanBody(b.message);
     if (!kind || !text) return apiError(400, 'INVALID_REQUEST', `Escreva a mensagem (até ${SUPPORT_LIMITS.bodyMax} caracteres).`);
     const id = ticketId();
+    const previous = await env.DB.prepare('SELECT COUNT(*) AS n FROM support_tickets WHERE user_id = ?1').bind(a.userId).first<{ n: number }>();
     await env.DB.batch([
-      env.DB.prepare("INSERT INTO support_tickets (id, user_id, kind, status, created_at, updated_at, unread_for_user) VALUES (?1, ?2, ?3, 'open', ?4, ?4, 0)").bind(id, a.userId, kind, iso),
+      env.DB.prepare("INSERT INTO support_tickets (id, user_id, kind, status, created_at, updated_at, unread_for_user, assistant) VALUES (?1, ?2, ?3, 'open', ?4, ?4, 0, ?5)").bind(id, a.userId, kind, iso, nextAssistant(previous?.n ?? 0)),
       env.DB.prepare("INSERT INTO support_messages (id, ticket_id, author, body, created_at) VALUES (?1, ?2, 'user', ?3, ?4)").bind(messageId(), id, text, iso),
     ]);
     if (kind === 'question') await answerWithAi(env, id, [{ author: 'user', body: text }], now, a.firstName);

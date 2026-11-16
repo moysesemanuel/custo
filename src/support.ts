@@ -11,5 +11,3 @@ export const trialContactLink = (): { href: string; label: string; external: boo
   ? { href: `https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(TRIAL_MESSAGE)}`, label: 'Falar no WhatsApp', external: true }
   : { href: `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Custô: período de teste')}&body=${encodeURIComponent(TRIAL_MESSAGE)}`, label: 'Falar com a gente', external: false };
 
-/** Nome e ilustração da assistente virtual do suporte (IA). Mude aqui para trocar em todo o app e no /admin. */
-export const SUPPORT_ASSISTANT = { name: 'Bianca', avatar: '/support/bianca.svg' } as const;

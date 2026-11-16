@@ -1,8 +1,9 @@
 import { apiCall, field } from '../../account/http';
+import type { AssistantId } from '../../../shared/supportPersona';
 
 export type SupportKind = 'question' | 'suggestion' | 'complaint';
 export type SupportMessage = { id: string; author: 'user' | 'ai' | 'team'; body: string; createdAt: string };
-export type SupportTicket = { id: string; kind: SupportKind; status: 'open' | 'answered' | 'closed'; createdAt: string; updatedAt: string; unread: boolean; messages: SupportMessage[] };
+export type SupportTicket = { id: string; kind: SupportKind; assistant: AssistantId; status: 'open' | 'answered' | 'closed'; createdAt: string; updatedAt: string; unread: boolean; messages: SupportMessage[] };
 export type SupportResult<T> = { ok: true; value: T } | { ok: false; message: string };
 
 const GENERIC = 'Não foi possível falar com o suporte agora. Verifique a internet e tente de novo, ou escreva para contato@dabitech.com.br.';

@@ -22,7 +22,7 @@ export type Metrics = { generatedAt: string; weeks: { start: string; signups: nu
   funnel: { registered: number; loggedIn: number; withOrders: number; active7d: number };
   email: { today: number; dailyLimit: number };
   supportAi: { today: number; dailyLimit: number; provider: 'workers-ai' | 'anthropic' } };
-export type SupportInboxTicket = { id: string; kind: 'question' | 'suggestion' | 'complaint'; status: 'open' | 'answered' | 'closed'; createdAt: string; updatedAt: string; unread: boolean;
+export type SupportInboxTicket = { id: string; kind: 'question' | 'suggestion' | 'complaint'; assistant: 'bianca' | 'davi'; status: 'open' | 'answered' | 'closed'; createdAt: string; updatedAt: string; unread: boolean;
   messages: { id: string; author: 'user' | 'ai' | 'team'; body: string; createdAt: string }[]; customer: { email: string | null; name: string | null } };
 export type CustomerRow = { id: string; email: string; label: string | null; name: string | null; status: 'active' | 'revoked'; createdAt: string; suspendedAt: string | null; accountId: string | null; lastAccessAt: string | null; isAdmin: boolean; activeSessions: number;
   /** Teste: dias (null = sem prazo) e fim (null enquanto o cliente não fez o primeiro acesso). */

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeServer, type Server, type Session } from './helpers/server';
 import { SUPPORT_HANDOFF } from '../shared/supportKnowledge';
 
-type Ticket = { id: string; kind: string; status: string; unread: boolean; messages: { author: string; body: string }[] };
+type Ticket = { id: string; kind: string; assistant: string; status: string; unread: boolean; messages: { author: string; body: string }[] };
 let srv: Server; let ana: Session; let admin: Session;
 let aiReply: string | Error; let aiCalls: { model: string; input: { messages: { role: string; content: string }[] } }[];
 beforeEach(async () => {
@@ -47,6 +47,16 @@ describe('suporte do cliente', () => {
     srv.env.SUPPORT_AI_DAILY_LIMIT = '2'; aiReply = 'ok';
     const t = await ticketOf(await send({ kind: 'question', message: 'Mais uma' }));
     expect(t.status).toBe('open'); expect(aiCalls).toHaveLength(2); // a 3ª nem chegou à IA
+  });
+
+  it('as conversas de cada cliente alternam entre Bianca e Davi, e cada uma mantém o seu', async () => {
+    const kinds = [];
+    for (let i = 0; i < 3; i++) kinds.push((await ticketOf(await send({ kind: 'suggestion', message: `ideia ${i}` }))).assistant);
+    expect(kinds).toEqual(['bianca', 'davi', 'bianca']);
+    const first = await ticketOf(await send({ kind: 'question', message: 'dúvida' }, admin)); // outro cliente começa pela Bianca
+    expect(first.assistant).toBe('bianca');
+    const list = await (await srv.request('GET', '/api/support', { session: ana })).json() as { tickets: Ticket[] };
+    expect(list.tickets.map(t => t.assistant)).toEqual(['bianca', 'davi', 'bianca']); // mais recente primeiro
   });
 
   it('sugestão e reclamação não passam pela IA', async () => {
