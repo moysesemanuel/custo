@@ -3,6 +3,7 @@ import { checkCsrf, resolveSession, type SessionEnv } from './session';
 import { consumeRateLimit, windowCount, type D1Like } from './store';
 import { randomToken } from './accounts';
 import { askSupportAi, type SupportAiEnv, type Turn } from './supportAi';
+import { firstName } from '../../shared/personName';
 
 export type SupportEnv = SessionEnv & SupportAiEnv & { SUPPORT_AI_DAILY_LIMIT?: string };
 type Deps = { now: () => Date };
@@ -35,17 +36,24 @@ async function auth(request: Request, env: SupportEnv, now: Date, write: boolean
   if (!r.ok) return { ok: false as const, res: apiError(r.status, r.error, r.message) };
   if (write) { const c = checkCsrf(request, env, r.ctx.session); if (c) return { ok: false as const, res: apiError(c.status, c.error, c.message) }; }
   if (!r.ctx.license) return { ok: false as const, res: apiError(403, 'NO_ACTIVE_LICENSE', 'Esta conta não tem licença.') };
-  return { ok: true as const, userId: r.ctx.user.id, licenseId: r.ctx.license.id };
+  return { ok: true as const, userId: r.ctx.user.id, licenseId: r.ctx.license.id, firstName: firstName(r.ctx.license.holder_name) };
 }
 
+/** Saudação da primeira resposta da assistente, escrita pelo servidor (o nome da pessoa não vai para a IA). */
+export const supportGreeting = (name: string | null) => `Olá${name ? `, ${name}` : ''}! Vou te ajudar com sua dúvida.`;
+const GREETING_RE = /^Olá(?:, [^!\n]{1,60})?! Vou te ajudar com sua dúvida\.\n\n/;
+
 /** Responde com a IA (só dúvidas) e grava a resposta; sem IA disponível ou fora do alcance dela, a conversa fica aberta para a equipe. */
-async function answerWithAi(env: SupportEnv, ticketIdValue: string, turns: Turn[], now: Date): Promise<void> {
+async function answerWithAi(env: SupportEnv, ticketIdValue: string, turns: Turn[], now: Date, name: string | null): Promise<void> {
   const iso = now.toISOString();
   const budget = await consumeRateLimit(env.DB, 'global', AI_SCOPE, aiDailyLimit(env), DAY, now.getTime());
-  const out = budget.allowed ? await askSupportAi(env, turns) : { kind: 'unavailable' as const };
+  // A saudação (com o nome) sai do histórico enviado à IA.
+  const out = budget.allowed ? await askSupportAi(env, turns.map(t => (t.author === 'ai' ? { ...t, body: t.body.replace(GREETING_RE, '') } : t))) : { kind: 'unavailable' as const };
   if (out.kind === 'answer') {
+    const first = !turns.some(t => t.author === 'ai');
+    const body = first ? `${supportGreeting(name)}\n\n${out.text}` : out.text;
     await env.DB.batch([
-      env.DB.prepare('INSERT INTO support_messages (id, ticket_id, author, body, created_at) VALUES (?1, ?2, \'ai\', ?3, ?4)').bind(messageId(), ticketIdValue, out.text, iso),
+      env.DB.prepare('INSERT INTO support_messages (id, ticket_id, author, body, created_at) VALUES (?1, ?2, \'ai\', ?3, ?4)').bind(messageId(), ticketIdValue, body, iso),
       env.DB.prepare("UPDATE support_tickets SET status = 'answered', updated_at = ?1 WHERE id = ?2").bind(iso, ticketIdValue),
     ]);
   }
@@ -89,7 +97,7 @@ export async function supportRoute(request: Request, env: SupportEnv, deps: Deps
       env.DB.prepare("INSERT INTO support_tickets (id, user_id, kind, status, created_at, updated_at, unread_for_user) VALUES (?1, ?2, ?3, 'open', ?4, ?4, 0)").bind(id, a.userId, kind, iso),
       env.DB.prepare("INSERT INTO support_messages (id, ticket_id, author, body, created_at) VALUES (?1, ?2, 'user', ?3, ?4)").bind(messageId(), id, text, iso),
     ]);
-    if (kind === 'question') await answerWithAi(env, id, [{ author: 'user', body: text }], now);
+    if (kind === 'question') await answerWithAi(env, id, [{ author: 'user', body: text }], now, a.firstName);
     const t = await loadTicket(env.DB, id, a.userId);
     return json({ ticket: publicTicket(t!, (await messagesOf(env.DB, [id])).get(id) ?? []) }, 201);
   }
@@ -115,7 +123,7 @@ export async function supportRoute(request: Request, env: SupportEnv, deps: Deps
     ]);
     // Dúvida que a IA ainda acompanha (nenhuma resposta da equipe): a IA responde de novo com o histórico.
     const msgs = (await messagesOf(env.DB, [id])).get(id) ?? [];
-    if (t.kind === 'question' && !msgs.some(x => x.author === 'team')) await answerWithAi(env, id, msgs.map(x => ({ author: x.author, body: x.body })), now);
+    if (t.kind === 'question' && !msgs.some(x => x.author === 'team')) await answerWithAi(env, id, msgs.map(x => ({ author: x.author, body: x.body })), now, a.firstName);
   }
   const fresh = await loadTicket(env.DB, id, a.userId);
   return json({ ticket: publicTicket(fresh!, (await messagesOf(env.DB, [id])).get(id) ?? []) });

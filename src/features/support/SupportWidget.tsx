@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { ArrowLeft, Bot, LifeBuoy, MessageSquarePlus, Send, UserRound, X } from 'lucide-react';
+import { ArrowLeft, LifeBuoy, MessageSquarePlus, Send, UserRound, X } from 'lucide-react';
 import { useAccount } from '../../account/AccountContext';
 import type { SupportKind, SupportTicket } from './supportClient';
-import { SUPPORT_EMAIL } from '../../support';
+import { SUPPORT_ASSISTANT, SUPPORT_EMAIL } from '../../support';
 
 const KIND_LABEL: Record<SupportKind, string> = { question: 'Dúvida', suggestion: 'Sugestão', complaint: 'Reclamação' };
 const STATUS_LABEL: Record<SupportTicket['status'], string> = { open: 'Aguardando a equipe', answered: 'Respondida', closed: 'Encerrada' };
@@ -60,7 +60,7 @@ export function SupportWidget() {
           : view.name === 'new' ? <NewMessage onSent={t => { put(t); setView({ name: 'thread', id: t.id }); }} />
           : current ? <Thread ticket={current} onChange={put} />
           : <>
-            <p className="muted" style={{ marginTop: 0 }}>Tire dúvidas sobre o app, mande sugestões ou reclamações. Dúvidas são respondidas por um assistente; se ele não resolver, a equipe responde aqui.</p>
+            <p className="muted" style={{ marginTop: 0 }}>Tire dúvidas sobre o app, mande sugestões ou reclamações. Dúvidas são respondidas pela {SUPPORT_ASSISTANT.name}, nossa assistente virtual; se ela não resolver, a equipe responde aqui.</p>
             <button type="button" className="primary" data-autofocus style={{ width: '100%' }} onClick={() => setView({ name: 'new' })}><MessageSquarePlus size={17} /> Nova mensagem</button>
             {err && <div className="notice warn" role="alert" style={{ marginTop: 12 }}>{err}</div>}
             {tickets && tickets.length > 0 && <><h3 className="support-subtitle">Suas conversas</h3><ul className="support-list">{tickets.map(t => <li key={t.id}><button type="button" onClick={() => setView({ name: 'thread', id: t.id })}>
@@ -87,7 +87,7 @@ function NewMessage({ onSent }: { onSent: (t: SupportTicket) => void }) {
     <fieldset className="support-kinds"><legend className="sr-only">Tipo de mensagem</legend>{(Object.keys(KIND_LABEL) as SupportKind[]).map(k => <label key={k} className={kind === k ? 'active' : ''}><input type="radio" name="support-kind" className="sr-only" checked={kind === k} onChange={() => setKind(k)} />{KIND_LABEL[k]}</label>)}</fieldset>
     <label htmlFor="support-text" className="sr-only">Mensagem</label>
     <textarea id="support-text" data-autofocus className="support-textarea" rows={5} maxLength={2000} value={text} onChange={e => setText(e.target.value)} placeholder={kind === 'question' ? 'Ex.: Como cadastro uma embalagem?' : kind === 'suggestion' ? 'Conte sua ideia para melhorar o app.' : 'Conte o que aconteceu.'} />
-    {busy && kind === 'question' && <p className="muted" role="status" style={{ margin: 0 }}>O assistente está escrevendo a resposta. Pode levar até 2 minutos.</p>}
+    {busy && kind === 'question' && <p className="muted" role="status" style={{ margin: 0 }}>{SUPPORT_ASSISTANT.name} está escrevendo a resposta. Pode levar até 2 minutos.</p>}
     {err && <div className="notice warn" role="alert">{err}</div>}
     <button className="primary" disabled={busy || !text.trim()}><Send size={16} /> {busy ? 'Enviando…' : 'Enviar'}</button>
     {kind !== 'question' && <p className="footnote" style={{ margin: 0 }}>Vai direto para a equipe. A resposta aparece aqui.</p>}
@@ -107,7 +107,7 @@ function Thread({ ticket, onChange }: { ticket: SupportTicket; onChange: (t: Sup
   }
   return <div className="stack" style={{ gap: 10 }}>
     <ul className="support-thread">{ticket.messages.map(m => <li key={m.id} className={`msg ${m.author}`}>
-      <span className="msg-who">{m.author === 'user' ? 'Você' : m.author === 'ai' ? <><Bot size={13} aria-hidden="true" /> Assistente</> : <><UserRound size={13} aria-hidden="true" /> Equipe Custô</>} · {when(m.createdAt)}</span>
+      <span className="msg-who">{m.author === 'user' ? 'Você' : m.author === 'ai' ? <><img className="support-avatar" src={SUPPORT_ASSISTANT.avatar} alt="" width={28} height={28} /><strong>{SUPPORT_ASSISTANT.name}</strong> · assistente virtual</> : <><UserRound size={13} aria-hidden="true" /> Equipe Custô</>} · {when(m.createdAt)}</span>
       <div className="msg-body">{m.body}</div></li>)}</ul>
     <div ref={end} />
     {ticket.status === 'open' && <p className="muted" role="status" style={{ margin: 0, fontSize: 13 }}>Recebemos sua mensagem. A equipe responde por aqui; avisamos com "Resposta nova".</p>}
@@ -118,7 +118,7 @@ function Thread({ ticket, onChange }: { ticket: SupportTicket; onChange: (t: Sup
         <textarea id="support-reply" className="support-textarea" rows={2} maxLength={2000} value={text} onChange={e => setText(e.target.value)} placeholder="Escreva aqui…" />
         <button className="primary" aria-label="Enviar resposta" disabled={busy || !text.trim()}><Send size={16} /></button>
       </form>}
-    {busy && ticket.kind === 'question' && <p className="muted" role="status" style={{ margin: 0, fontSize: 13 }}>Enviando… se for uma dúvida, o assistente pode levar até 2 minutos.</p>}
+    {busy && ticket.kind === 'question' && <p className="muted" role="status" style={{ margin: 0, fontSize: 13 }}>Enviando… se for uma dúvida, a {SUPPORT_ASSISTANT.name} pode levar até 2 minutos.</p>}
     {err && <div className="notice warn" role="alert">{err}</div>}
   </div>;
 }

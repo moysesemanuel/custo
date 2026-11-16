@@ -26,6 +26,17 @@ describe('suporte do cliente', () => {
     expect(aiCalls[0].input.messages[0].role).toBe('system');
     expect(aiCalls[0].input.messages[0].content).toMatch(/## Ingredientes/);
     expect(aiCalls[0].input.messages[1]).toEqual({ role: 'user', content: 'Como cadastro um ingrediente?' }); // só o texto da mensagem, sem dados da conta
+    expect(t.messages[1].body).toBe('Olá! Vou te ajudar com sua dúvida.\n\nPara cadastrar um ingrediente:\n1. Clique em "Novo ingrediente".'); // sem nome cadastrado
+  });
+
+  it('saudação com o primeiro nome só na primeira resposta; o nome não vai para a IA', async () => {
+    srv.db.raw.prepare("UPDATE licenses SET holder_name = 'Lana Costa' WHERE email = 'ana@exemplo.com'").run();
+    const t = await ticketOf(await send({ kind: 'question', message: 'Como faço backup?' }));
+    expect(t.messages[1].body.startsWith('Olá, Lana! Vou te ajudar com sua dúvida.\n\n')).toBe(true);
+    aiReply = 'Use "Escolher arquivo de backup".';
+    const t2 = await ticketOf(await srv.request('POST', `/api/support/${t.id}/messages`, { session: ana, body: { message: 'E para restaurar?' } }));
+    expect(t2.messages[3].body).toBe('Use "Escolher arquivo de backup".'); // sem nova saudação
+    expect(JSON.stringify(aiCalls.map(c => c.input.messages.slice(1)))).not.toMatch(/Lana/);
   });
 
   it('fora do manual, erro da IA ou cota do dia esgotada: a conversa fica aberta para a equipe, sem resposta inventada', async () => {
@@ -101,7 +112,7 @@ describe('trocar a IA pelo Claude (só configuração)', () => {
     }));
     try {
       const t = await ticketOf(await send({ kind: 'question', message: 'Como faço backup?' }));
-      expect(t.status).toBe('answered'); expect(t.messages.at(-1)?.body).toBe('Clique em "Baixar backup".');
+      expect(t.status).toBe('answered'); expect(t.messages.at(-1)?.body).toBe('Olá! Vou te ajudar com sua dúvida.\n\nClique em "Baixar backup".');
       expect(bodies[0].model).toBe('claude-haiku-5-5');
       expect(bodies[0].system[0].cache_control).toEqual({ type: 'ephemeral' });
       expect(aiCalls).toHaveLength(0); // não usou o Workers AI
