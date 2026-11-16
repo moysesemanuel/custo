@@ -108,7 +108,7 @@ function Thread({ ticket, onChange }: { ticket: SupportTicket; onChange: (t: Sup
   }
   return <div className="stack" style={{ gap: 10 }}>
     <ul className="support-thread">{ticket.messages.map(m => <li key={m.id} className={`msg ${m.author}`}>
-      <span className="msg-who">{m.author === 'user' ? 'Você' : m.author === 'ai' ? <><img className="support-avatar" src={ASSISTANTS[assistantOf(ticket.assistant)].avatar} alt="" width={28} height={28} /><strong>{ASSISTANTS[assistantOf(ticket.assistant)].name}</strong> · assistente virtual</> : <><UserRound size={13} aria-hidden="true" /> Equipe Custô</>} · {when(m.createdAt)}</span>
+      <span className="msg-who">{m.author === 'user' ? 'Você' : m.author === 'ai' ? <><img className="support-avatar" src={ASSISTANTS[assistantOf(ticket.assistant)].avatar} alt="" width={32} height={32} /><strong>{ASSISTANTS[assistantOf(ticket.assistant)].name}</strong> · assistente virtual</> : <><UserRound size={13} aria-hidden="true" /> Equipe Custô</>} · {when(m.createdAt)}</span>
       <div className="msg-body">{m.body}</div></li>)}</ul>
     <div ref={end} />
     {ticket.status === 'open' && <p className="muted" role="status" style={{ margin: 0, fontSize: 13 }}>Recebemos sua mensagem. A equipe responde por aqui; avisamos com "Resposta nova".</p>}
