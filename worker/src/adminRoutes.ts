@@ -1,5 +1,5 @@
 import { addMs, normalizeEmail } from './accounts';
-import { activeSessionsOf, auditStatement, AUDIT_PAGE_MAX, AUDIT_RETENTION_DAYS, CUSTOMERS_PAGE_MAX, getActiveAdmin, getCustomer, listAudit, listCustomers, overview, PAGE_DEFAULT, pruneAudit } from './adminStore';
+import { activeSessionsOf, auditStatement, metrics, AUDIT_PAGE_MAX, AUDIT_RETENTION_DAYS, CUSTOMERS_PAGE_MAX, getActiveAdmin, getCustomer, listAudit, listCustomers, overview, PAGE_DEFAULT, pruneAudit } from './adminStore';
 import { apiError, json, readJsonBody } from './http';
 import { generateLicenseId, generateLicenseKey, hashLicenseKey, LICENSE_ID_PATTERN } from './licenses';
 import { LABEL_PATTERN } from './licenseAdmin';
@@ -50,7 +50,7 @@ export async function adminRoute(request: Request, env: SessionEnv, deps: AdminD
   if (method !== 'GET' && method !== 'POST' && method !== 'DELETE') return apiError(405, 'METHOD_NOT_ALLOWED', 'Método não permitido.');
 
   const m = path.match(/^\/api\/admin\/customers\/(lic_[0-9a-f]{16})(?:\/(suspend|activate|sessions|trial|name|email)(?:\/(revoke-all|extend|permanent|until|ses_[0-9a-f]{16}))?)?$/);
-  const known = path === '/api/admin/me' || path === '/api/admin/overview' || path === '/api/admin/customers' || path === '/api/admin/audit' || m;
+  const known = path === '/api/admin/me' || path === '/api/admin/overview' || path === '/api/admin/metrics' || path === '/api/admin/customers' || path === '/api/admin/audit' || m;
   if (!known) return apiError(404, 'NOT_FOUND', 'Rota não encontrada.');
   const gate = await authorizeAdmin(request, env, deps, write);
   if (!gate.ok) return gate.response;
@@ -63,6 +63,25 @@ export async function adminRoute(request: Request, env: SessionEnv, deps: AdminD
   if (path === '/api/admin/overview' && method === 'GET') {
     const o = await overview(env.DB, iso, addMs(iso, -30 * DAY), addMs(iso, -7 * DAY));
     return json({ generatedAt: iso, customers: { total: o?.total ?? 0, active: o?.active ?? 0, suspended: o?.suspended ?? 0, pendingFirstLogin: o?.pending_first_login ?? 0, new30d: o?.new_30d ?? 0 }, activeSessions: o?.active_sessions ?? 0, recentUsers7d: o?.recent_users_7d ?? 0 });
+  }
+
+  if (path === '/api/admin/metrics' && method === 'GET') {
+    // 12 semanas (segunda a domingo, UTC), da mais antiga à atual.
+    const WEEKS = 12;
+    const dow = (new Date(iso).getUTCDay() + 6) % 7; // 0 = segunda
+    const thisMonday = addMs(`${iso.slice(0, 10)}T00:00:00.000Z`, -dow * DAY).slice(0, 10);
+    const starts = Array.from({ length: WEEKS }, (_, i) => addMs(`${thisMonday}T00:00:00.000Z`, -(WEEKS - 1 - i) * 7 * DAY).slice(0, 10));
+    const m = await metrics(env.DB, iso, `${starts[0]}T00:00:00.000Z`);
+    const bucket = (rows: { d: string; n: number }[]) => starts.map((s, i) => rows.filter(r => r.d >= s && (i === WEEKS - 1 || r.d < starts[i + 1])).reduce((a, r) => a + r.n, 0));
+    const [signups, firstLogins, quotes, orders] = [bucket(m.lic), bucket(m.firsts), bucket(m.quotes), bucket(m.orders)];
+    const n = (v: number | null | undefined) => v ?? 0;
+    return json({
+      generatedAt: iso,
+      weeks: starts.map((start, i) => ({ start, signups: signups[i], firstLogins: firstLogins[i], quotes: quotes[i], orders: orders[i] })),
+      activeUsers: { d1: n(m.activity?.d1), d7: n(m.activity?.d7), d30: n(m.activity?.d30) },
+      licenses: { permanent: n(m.status?.permanent), trialRunning: n(m.status?.trial_running), trialEnding: n(m.status?.trial_ending), trialEnded: n(m.status?.trial_ended), trialNotStarted: n(m.status?.trial_not_started), suspended: n(m.status?.suspended) },
+      funnel: { registered: n(m.funnel?.registered), loggedIn: n(m.funnel?.logged_in), withOrders: n(m.funnel?.with_orders), active7d: n(m.funnel?.active_7d) },
+    });
   }
 
   if (path === '/api/admin/customers' && method === 'GET') {

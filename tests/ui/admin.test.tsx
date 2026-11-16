@@ -31,8 +31,11 @@ describe('Painel /admin', () => {
   it('visão geral com números reais', async () => {
     open(); await screen.findByRole('heading', { name: 'Visão geral' });
     const card = (label: string) => screen.findByText(label).then(e => e.closest('.metric-card') as HTMLElement);
-    expect((await card('Clientes cadastrados')).textContent).toContain('3'); expect((await card('Licença ativa')).textContent).toContain('3'); expect((await card('Sessões ativas')).textContent).toContain('2');
-    expect(screen.getByText(/não há métricas financeiras/i)).toBeTruthy();
+    expect((await card('Clientes cadastrados')).textContent).toContain('3'); expect((await card('Licença suspensa')).textContent).toMatch(/0.*Sessões ativas agora: 2/);
+    expect((await card('Usaram nos últimos 7 dias')).textContent).toMatch(/^Usaram nos últimos 7 dias2/);
+    expect(await screen.findByRole('region', { name: 'Novos clientes por semana' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Situação das licenças' })).toBeTruthy();
+    expect(screen.getByText(/só contagens/i)).toBeTruthy();
   });
   it('cadastra cliente (sem enviar e-mail), mostra os detalhes e é idempotente', async () => {
     const u = userEvent.setup(); open(); await u.click(await screen.findByRole('button', { name: /^Clientes$/ }));

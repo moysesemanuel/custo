@@ -77,3 +77,36 @@ export const auditStatement = (db: D1Like, a: { at: string; adminUserId: string;
   ).bind(a.at, a.adminUserId, a.action, a.licenseId ?? null, a.targetUserId ?? null);
 /** Retenção: apaga eventos com mais de 1 ano (consulta por índice; roda só em ações administrativas, que são raras). */
 export const pruneAudit = (db: D1Like, cutoffIso: string) => db.prepare('DELETE FROM admin_audit WHERE at < ?').bind(cutoffIso).run();
+
+/**
+ * Métricas da Visão geral do painel (só contagens agregadas: nenhum dado de negócio dos clientes, como nomes ou valores).
+ * Lê poucas linhas por tabela (cadastros/links/pedidos das últimas semanas agrupados por dia) e roda só quando um administrador abre a tela.
+ */
+export async function metrics(db: D1Like, nowIso: string, sinceIso: string) {
+  const day = (iso: string) => iso.slice(0, 10);
+  const since = day(sinceIso);
+  const [lic, firsts, quotes, orders, status, activity, funnel] = await Promise.all([
+    db.prepare("SELECT substr(created_at, 1, 10) AS d, COUNT(*) AS n FROM licenses WHERE email IS NOT NULL AND created_at >= ?1 GROUP BY d").bind(since).all<{ d: string; n: number }>(),
+    db.prepare('SELECT substr(created_at, 1, 10) AS d, COUNT(*) AS n FROM users WHERE created_at >= ?1 GROUP BY d').bind(since).all<{ d: string; n: number }>(),
+    db.prepare('SELECT substr(created_at, 1, 10) AS d, COUNT(*) AS n FROM quotes WHERE created_at >= ?1 GROUP BY d').bind(since).all<{ d: string; n: number }>(),
+    db.prepare('SELECT substr(created_at, 1, 10) AS d, COUNT(*) AS n FROM orders WHERE created_at >= ?1 GROUP BY d').bind(since).all<{ d: string; n: number }>(),
+    db.prepare(`SELECT
+        SUM(status = 'revoked') AS suspended,
+        SUM(status = 'active' AND trial_days IS NULL AND expires_at IS NULL) AS permanent,
+        SUM(status = 'active' AND trial_days IS NOT NULL AND expires_at IS NULL) AS trial_not_started,
+        SUM(status = 'active' AND expires_at > ?1 AND expires_at > strftime('%Y-%m-%dT%H:%M:%fZ', ?1, '+3 days')) AS trial_running,
+        SUM(status = 'active' AND expires_at > ?1 AND expires_at <= strftime('%Y-%m-%dT%H:%M:%fZ', ?1, '+3 days')) AS trial_ending,
+        SUM(status = 'active' AND expires_at IS NOT NULL AND expires_at <= ?1) AS trial_ended
+      FROM licenses WHERE email IS NOT NULL`).bind(nowIso).first<Record<string, number | null>>(),
+    db.prepare(`SELECT
+        (SELECT COUNT(DISTINCT user_id) FROM sessions WHERE last_seen_at >= strftime('%Y-%m-%dT%H:%M:%fZ', ?1, '-1 days')) AS d1,
+        (SELECT COUNT(DISTINCT user_id) FROM sessions WHERE last_seen_at >= strftime('%Y-%m-%dT%H:%M:%fZ', ?1, '-7 days')) AS d7,
+        (SELECT COUNT(DISTINCT user_id) FROM sessions WHERE last_seen_at >= strftime('%Y-%m-%dT%H:%M:%fZ', ?1, '-30 days')) AS d30`).bind(nowIso).first<{ d1: number; d7: number; d30: number }>(),
+    db.prepare(`SELECT
+        (SELECT COUNT(*) FROM licenses WHERE email IS NOT NULL) AS registered,
+        (SELECT COUNT(*) FROM licenses WHERE email IS NOT NULL AND user_id IS NOT NULL) AS logged_in,
+        (SELECT COUNT(DISTINCT l.user_id) FROM licenses l JOIN orders o ON o.user_id = l.user_id WHERE l.email IS NOT NULL) AS with_orders,
+        (SELECT COUNT(DISTINCT l.user_id) FROM licenses l JOIN sessions s ON s.user_id = l.user_id WHERE l.email IS NOT NULL AND s.last_seen_at >= strftime('%Y-%m-%dT%H:%M:%fZ', ?1, '-7 days')) AS active_7d`).bind(nowIso).first<{ registered: number; logged_in: number; with_orders: number; active_7d: number }>(),
+  ]);
+  return { lic: lic.results, firsts: firsts.results, quotes: quotes.results, orders: orders.results, status, activity, funnel };
+}

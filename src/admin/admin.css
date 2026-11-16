@@ -5,3 +5,5 @@
 .admin-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:23px}.admin-metrics .metric-card small{color:var(--color-muted-text);font-size:12px;line-height:1.5}
 @media(max-width:1000px){.admin-metrics{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.admin-metrics{grid-template-columns:1fr}.admin-dl{grid-template-columns:1fr;gap:2px}.admin-dl dd{margin-bottom:8px}.admin-actions button{width:100%}}
 .admin-name-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.admin-name-form input{flex:1 1 200px;width:auto}.admin-name-form .notice{flex-basis:100%}
+.admin-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}.admin-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}.admin-chart{min-width:0}.admin-chart-plot{margin-top:10px}@media(max-width:1100px){.admin-charts{grid-template-columns:1fr}}@media(max-width:1000px){.admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.admin-metrics{grid-template-columns:1fr}}

@@ -16,6 +16,10 @@ export const ADMIN_MESSAGES: Record<AdminFailure, string> = {
 };
 
 export type Overview = { generatedAt: string; customers: { total: number; active: number; suspended: number; pendingFirstLogin: number; new30d: number }; activeSessions: number; recentUsers7d: number };
+export type Metrics = { generatedAt: string; weeks: { start: string; signups: number; firstLogins: number; quotes: number; orders: number }[];
+  activeUsers: { d1: number; d7: number; d30: number };
+  licenses: { permanent: number; trialRunning: number; trialEnding: number; trialEnded: number; trialNotStarted: number; suspended: number };
+  funnel: { registered: number; loggedIn: number; withOrders: number; active7d: number } };
 export type CustomerRow = { id: string; email: string; label: string | null; name: string | null; status: 'active' | 'revoked'; createdAt: string; suspendedAt: string | null; accountId: string | null; lastAccessAt: string | null; isAdmin: boolean; activeSessions: number;
   /** Teste: dias (null = sem prazo) e fim (null enquanto o cliente não fez o primeiro acesso). */
   trialDays: number | null; trialEndsAt: string | null };
@@ -47,6 +51,7 @@ export function createAdminClient(base: string, getCsrf: () => string | undefine
   return {
     me: () => call<{ email: string }>('/me', {}, b => (field<boolean>(b, 'admin') === true ? { email: field<string>(b, 'email') ?? '' } : undefined)),
     overview: () => call<Overview>('/overview', {}, whole<Overview>),
+    metrics: () => call<Metrics>('/metrics', {}, whole<Metrics>),
     customers: (o: { q?: string; status?: string; cursor?: string }) => call<{ customers: CustomerRow[]; nextCursor: string | null }>(`/customers${qs({ ...o, limit: '25' })}`, {}, whole),
     customer: (id: string) => call<CustomerDetail>(`/customers/${id}`, {}, whole),
     createCustomer: (b: { email: string; name?: string; label?: string; trialDays?: number | null }) => call<{ created: boolean; id: string | null; email: string }>('/customers', { method: 'POST', body: b }, whole),

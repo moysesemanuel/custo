@@ -5,7 +5,8 @@ import { AUTH_MESSAGES, createAuthClient, type DeviceInfo, type SessionInfo } fr
 import { Field } from '../components/Field';
 import { Modal } from '../components/Modal';
 import { BrandPanel } from '../components/BrandPanel';
-import { ADMIN_MESSAGES, createAdminClient, type AdminClient, type AdminFailure, type AuditEvent, type CustomerDetail, type CustomerRow, type Overview } from './adminClient';
+import { ADMIN_MESSAGES, createAdminClient, type AdminClient, type AdminFailure, type AuditEvent, type CustomerDetail, type CustomerRow, type Metrics, type Overview } from './adminClient';
+import { AdminCharts } from './AdminCharts';
 import './admin.css';
 import { isTrialOver, TRIAL_DAYS, trialDaysLeft } from '../../shared/trial';
 import { cleanPersonName, PERSON_NAME_MAX } from '../../shared/personName';
@@ -108,17 +109,25 @@ function Head({ title, hint, children }: { title: string; hint?: string; childre
 }
 
 function OverviewPanel({ api, fail }: { api: AdminClient; fail: (r: AdminFailure) => void }) {
-  const [o, setO] = useState<Overview | null>(null); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false);
-  const load = useCallback(async () => { setBusy(true); const r = await api.overview(); setBusy(false); if (r.ok) { setO(r.value); setErr(''); } else { setErr(ADMIN_MESSAGES[r.reason]); fail(r.reason); } }, [api, fail]);
+  const [o, setO] = useState<Overview | null>(null); const [m, setM] = useState<Metrics | null>(null); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false);
+  const load = useCallback(async () => {
+    setBusy(true); const [r, rm] = await Promise.all([api.overview(), api.metrics()]); setBusy(false);
+    if (r.ok) { setO(r.value); setErr(''); } else { setErr(ADMIN_MESSAGES[r.reason]); fail(r.reason); }
+    if (rm.ok) setM(rm.value);
+  }, [api, fail]);
   useEffect(() => { void load(); }, [load]);
+  const inTrial = m ? m.licenses.trialRunning + m.licenses.trialEnding + m.licenses.trialNotStarted : 0;
   const cards: [string, number | undefined, string][] = o ? [
-    ['Clientes cadastrados', o.customers.total, 'Licenças com e-mail registradas.'], ['Licença ativa', o.customers.active, 'Podem entrar e sincronizar.'], ['Licença suspensa', o.customers.suspended, 'Sem sincronização nem links.'],
-    ['Novos em 30 dias', o.customers.new30d, 'Cadastrados nos últimos 30 dias.'], ['Sessões ativas', o.activeSessions, 'Dispositivos conectados agora (válidos e não revogados).'], ['Com acesso em 7 dias', o.recentUsers7d, 'Contas com algum dispositivo usado na última semana (precisão de cerca de 1 hora).'],
+    ['Clientes cadastrados', o.customers.total, `${o.customers.new30d} nos últimos 30 dias · ${o.customers.pendingFirstLogin} aguardando o 1º acesso.`],
+    ['Usaram nos últimos 7 dias', m?.activeUsers.d7 ?? o.recentUsers7d, m ? `Hoje: ${m.activeUsers.d1} · em 30 dias: ${m.activeUsers.d30}.` : 'Contas com algum dispositivo usado na semana.'],
+    ['Em teste', m ? inTrial : undefined, m ? `${m.licenses.trialEnding} ${m.licenses.trialEnding === 1 ? 'vence' : 'vencem'} em até 3 dias · ${m.licenses.trialEnded} encerrado(s).` : 'Carregando…'],
+    ['Licença suspensa', o.customers.suspended, `Sessões ativas agora: ${o.activeSessions}.`],
   ] : [];
   return <><Head title="Visão geral" hint="Contagens reais do banco, atualizadas quando você abre ou pede."><button className="secondary" onClick={() => void load()} disabled={busy}>{busy ? 'Atualizando…' : 'Atualizar'}</button></Head>
     {err && <div className="notice error" role="alert">{err}</div>}
-    {o && <><div className="admin-metrics">{cards.map(([label, v, hint]) => <div key={label} className="card metric-card"><span className="metric-label">{label}</span><span className="metric">{v}</span><small>{hint}</small></div>)}</div>
-      <p className="footnote">Aguardando primeiro login: {o.customers.pendingFirstLogin}. Gerado em {when(o.generatedAt)}. Não há métricas financeiras nem de uso interno: o painel não lê receitas, ingredientes nem encomendas dos clientes.</p></>}
+    {o && <><div className="admin-metrics">{cards.map(([label, v, hint]) => <div key={label} className="card metric-card"><span className="metric-label">{label}</span><span className="metric">{v ?? '—'}</span><small>{hint}</small></div>)}</div>
+      {m && <AdminCharts m={m} />}
+      <p className="footnote">Gerado em {when(o.generatedAt)}. O painel mostra só contagens: quantos pedidos e links cada semana teve, nunca o conteúdo (clientes, valores, receitas ou ingredientes).</p></>}
     {!o && !err && <p className="muted" role="status">Carregando…</p>}</>;
 }
 
