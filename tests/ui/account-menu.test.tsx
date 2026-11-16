@@ -79,4 +79,29 @@ describe('saudação e menu da conta', () => {
     await screen.findByRole('heading', { level: 1 });
     expect(screen.queryByText(/do seu teste grátis/)).toBeNull();
   });
+
+  it('o X fecha a faixa até o dia seguinte (fica guardado); no último dia não há X', async () => {
+    const u = userEvent.setup();
+    await boot('Lana Costa', new Date(Date.now() + 5 * 86_400_000 - 60_000).toISOString());
+    await screen.findByText(/Faltam 5 dias/);
+    await u.click(screen.getByRole('button', { name: 'Fechar aviso do teste até amanhã' }));
+    expect(screen.queryByText(/Faltam 5 dias/)).toBeNull();
+    expect(memory.get('pedidocerto.trialBannerHiddenOn')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // fechada hoje: ao abrir de novo no mesmo dia, continua fechada
+    const saved = memory.get('pedidocerto.trialBannerHiddenOn')!;
+    await boot('Lana Costa', new Date(Date.now() + 5 * 86_400_000 - 60_000).toISOString()); memory.set('pedidocerto.trialBannerHiddenOn', saved);
+    document.body.innerHTML = '';
+    const { default: App } = await import('../../src/App'); render(<App />);
+    await screen.findByRole('heading', { level: 1 });
+    expect(screen.queryByText(/do seu teste grátis/)).toBeNull();
+    // num dia anterior (ontem), volta a aparecer
+    memory.set('pedidocerto.trialBannerHiddenOn', '2000-01-01');
+    document.body.innerHTML = ''; render(<App />);
+    expect(await screen.findByText(/Faltam 5 dias/)).toBeTruthy();
+  });
+  it('no último dia a faixa não pode ser fechada, mesmo se tiver sido fechada antes no mesmo dia', async () => {
+    await boot('Lana Costa', new Date(Date.now() + 86_400_000 - 60_000).toISOString());
+    expect(await screen.findByText(/Falta 1 dia do seu teste grátis/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Fechar aviso do teste/ })).toBeNull();
+  });
 });
