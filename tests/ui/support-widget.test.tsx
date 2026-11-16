@@ -9,7 +9,7 @@ const BASE = 'https://api.exemplo.test';
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 const memory = new Map<string, string>();
 type T = { id: string; kind: string; status: string; createdAt: string; updatedAt: string; unread: boolean; messages: { id: string; author: string; body: string; createdAt: string }[] };
-let tickets: T[]; let calls: { path: string; body?: unknown }[];
+let tickets: T[]; let calls: { path: string; body?: unknown }[]; let hold: Promise<void> | null = null;
 const at = '2026-11-16T15:00:00.000Z';
 
 async function boot(signedIn = true) {
@@ -22,6 +22,8 @@ async function boot(signedIn = true) {
     if (path === '/api/sessions') return json(200, { maxSessions: 2, sessions: [] });
     if (path.startsWith('/api/sync/v2')) return json(503, {});
     if (path === '/api/support' && init?.method === 'POST') {
+      if (hold) await hold;
+      if (body.message === 'falha') return json(503, { message: 'Sem conexão com o suporte.' });
       const t: T = { id: 'stk_aaaaaaaaaaaa', kind: body.kind, status: 'answered', createdAt: at, updatedAt: at, unread: false, messages: [{ id: 'm1', author: 'user', body: body.message, createdAt: at }, { id: 'm2', author: 'ai', body: 'Clique em "Novo ingrediente".', createdAt: at }] };
       tickets = [t, ...tickets]; return json(201, { ticket: t });
     }
@@ -37,7 +39,7 @@ async function boot(signedIn = true) {
 }
 
 describe('botão de suporte', () => {
-  beforeEach(() => { document.body.innerHTML = ''; tickets = []; });
+  beforeEach(() => { document.body.innerHTML = ''; tickets = []; hold = null; });
 
   it('envia uma dúvida e mostra a resposta do assistente; "Ainda preciso de ajuda" encaminha à equipe', async () => {
     const u = userEvent.setup(); await boot();
@@ -60,6 +62,33 @@ describe('botão de suporte', () => {
     await u.click(screen.getByRole('button', { name: /Reclamação/ }));
     expect(screen.getByText('Já corrigimos!')).toBeTruthy();
     await waitFor(() => expect(calls.some(c => c.path === '/api/support/stk_bbbbbbbbbbbb/read')).toBe(true));
+  });
+
+  it('a dúvida vira chat na hora, com o assistente "escrevendo", até a resposta chegar', async () => {
+    let release!: () => void; hold = new Promise(r => { release = r; });
+    const u = userEvent.setup(); await boot();
+    await u.click(await screen.findByRole('button', { name: 'Suporte' }));
+    const panel = screen.getByRole('dialog', { name: 'Suporte' });
+    await u.click(within(panel).getByRole('button', { name: /Nova mensagem/ }));
+    await u.type(within(panel).getByLabelText('Mensagem'), 'Como faço backup?');
+    await u.click(within(panel).getByRole('button', { name: /Enviar/ }));
+    expect(within(panel).getByText('Como faço backup?')).toBeTruthy();
+    expect(within(panel).queryByLabelText('Mensagem')).toBeNull(); // o formulário saiu da tela
+    expect(within(panel).getByRole('status', { name: /escrevendo a resposta/ })).toBeTruthy();
+    release();
+    expect(await within(panel).findByText('Clique em "Novo ingrediente".')).toBeTruthy();
+    expect(within(panel).queryByRole('status', { name: /escrevendo a resposta/ })).toBeNull();
+  });
+
+  it('se o envio falhar, volta ao formulário com o texto e o aviso', async () => {
+    const u = userEvent.setup(); await boot();
+    await u.click(await screen.findByRole('button', { name: 'Suporte' }));
+    const panel = screen.getByRole('dialog', { name: 'Suporte' });
+    await u.click(within(panel).getByRole('button', { name: /Nova mensagem/ }));
+    await u.type(within(panel).getByLabelText('Mensagem'), 'falha');
+    await u.click(within(panel).getByRole('button', { name: /Enviar/ }));
+    expect(await within(panel).findByText('Sem conexão com o suporte.')).toBeTruthy();
+    expect((within(panel).getByLabelText('Mensagem') as HTMLTextAreaElement).value).toBe('falha');
   });
 
   it('sugestão vai direto para a equipe (o aviso diz isso)', async () => {
