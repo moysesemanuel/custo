@@ -1,13 +1,21 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Copy, ExternalLink, Link2, RefreshCw, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ClipboardList, Copy, ExternalLink, Link2, RefreshCw, Trash2 } from 'lucide-react';
 import { useAccount } from '../../account/AccountContext';
 import { formatCents } from '../../../shared/publicQuote';
 import { copyText, brDate } from '../../utils';
 import { QUOTE_MESSAGES, type PublishedQuote } from './quotes';
+import { effectiveQuoteCodes } from '../../../shared/quoteCode';
+import { itemsSummary } from '../../domain/orders';
+import type { Order, Recipe } from '../../domain/types';
 
 const STATUS: Record<PublishedQuote['status'], { label: string; cls: string }> = { active: { label: 'Ativo', cls: 'tag green' }, expired: { label: 'Validade encerrada', cls: 'tag orange' }, revoked: { label: 'Revogado', cls: 'tag red' } };
 
-export function PublishedLinks({ inform, quoteNumber }: { inform: (m: string) => void; quoteNumber?: string }) {
+/**
+ * `orders`/`recipes`/`openOrder` (opcionais): ligam cada link ao pedido DESTE aparelho pelo código do orçamento, para mostrar
+ * cliente, produtos e entrega. Isso é só para você: o link público continua sem dados do cliente nem custos.
+ */
+export function PublishedLinks({ inform, quoteNumber, orders, recipes = [], openOrder }: { inform: (m: string) => void; quoteNumber?: string; orders?: readonly Order[]; recipes?: readonly Recipe[]; openOrder?: (id: string) => void }) {
+  const byCode = useMemo(() => { const m = new Map<string, Order>(); if (orders) for (const [id, code] of effectiveQuoteCodes(orders)) { const o = orders.find(x => x.id === id); if (o) m.set(code, o); } return m; }, [orders]);
   const acc = useAccount();
   const [list, setList] = useState<PublishedQuote[] | null>(null);
   const [error, setError] = useState('');
@@ -32,6 +40,9 @@ export function PublishedLinks({ inform, quoteNumber }: { inform: (m: string) =>
     {visible && !visible.length && <div className="empty"><Link2 size={30} />{quoteNumber ? 'Nenhum link publicado para este pedido.' : 'Nenhum link publicado ainda.'}</div>}
     {visible?.map(q => <div key={q.id} style={{ border: '1px solid var(--color-border)', borderRadius: 12, padding: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}><strong>{/^ORC-/.test(q.quoteNumber) ? q.quoteNumber : `Nº ${q.quoteNumber}`} · {formatCents(q.totalCents)}</strong><span className={STATUS[q.status].cls}>{STATUS[q.status].label}</span></div>
+      {orders && (() => { const o = byCode.get(q.quoteNumber); return o
+        ? <div className="published-order"><div><strong>{o.customer}</strong><span>{itemsSummary(o, recipes)}</span><span>Entrega: {brDate(o.deliveryDate)} · {o.status}</span></div>{openOrder && <button className="secondary" onClick={() => openOrder(o.id)}><ClipboardList size={15} /> Ver pedido</button>}</div>
+        : <p className="muted" style={{ margin: '6px 0 0', fontSize: 13 }}>O pedido deste orçamento não está neste aparelho (pode ter sido excluído).</p>; })()}
       <p className="muted" style={{ margin: '4px 0 8px', fontSize: 13 }}>Emitido em {brDate(q.issuedAt)}{q.validUntil ? ` · válido até ${brDate(q.validUntil)}` : ''}</p>
       {q.status !== 'revoked' && q.url && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <button className="secondary" onClick={() => void copyText(q.url!).then(ok => inform(ok ? 'Link copiado.' : 'Não foi possível copiar automaticamente.'))}><Copy size={15} /> Copiar link</button>

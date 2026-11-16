@@ -52,7 +52,7 @@ export function SettingsPage(props: PageProps) {
       {/* `key`: se as configurações mudarem por fora (ex.: vieram da sincronização), o formulário recarrega em vez de mostrar valores velhos */}
       <BusinessSettings key={JSON.stringify(props.data.settings ?? {})} {...props} />
       <div className="two"><AccountPanel inform={inform} /><SyncPanel inform={inform} /></div>
-      <PublishedLinks inform={inform} />
+      <PublishedLinks inform={inform} orders={props.data.orders} recipes={props.data.recipes} openOrder={props.openOrder} />
     </div>
   </>;
 }
