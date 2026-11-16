@@ -11,7 +11,7 @@ import { isTrialOver, TRIAL_DAYS, trialDaysLeft } from '../../shared/trial';
 import { cleanPersonName, PERSON_NAME_MAX } from '../../shared/personName';
 
 const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—');
-const ACTIONS: Record<string, string> = { 'customer.create': 'Cadastro de cliente', 'customer.suspend': 'Suspensão de acesso', 'customer.activate': 'Reativação de acesso', 'customer.trial-extend': 'Teste prorrogado', 'customer.trial-permanent': 'Licença tornada permanente', 'customer.rename': 'Nome alterado', 'session.revoke': 'Sessão revogada', 'session.revoke-all': 'Todas as sessões revogadas', 'admin.grant': 'Acesso administrativo concedido', 'admin.revoke': 'Acesso administrativo revogado' };
+const ACTIONS: Record<string, string> = { 'customer.create': 'Cadastro de cliente', 'customer.suspend': 'Suspensão de acesso', 'customer.activate': 'Reativação de acesso', 'customer.trial-extend': 'Teste prorrogado', 'customer.trial-permanent': 'Licença tornada permanente', 'customer.rename': 'Nome alterado', 'customer.email-change': 'E-mail alterado', 'customer.trial-until': 'Prazo da licença alterado', 'session.revoke': 'Sessão revogada', 'session.revoke-all': 'Todas as sessões revogadas', 'admin.grant': 'Acesso administrativo concedido', 'admin.revoke': 'Acesso administrativo revogado' };
 const RESULTS: Record<string, string> = { ok: 'aplicado', noop: 'sem alteração' };
 type View = { name: 'overview' } | { name: 'customers' } | { name: 'customer'; id: string } | { name: 'audit'; licenseId?: string };
 
@@ -202,7 +202,7 @@ function NameEditor({ api, id, name, fail, saved }: { api: AdminClient; id: stri
 type Pending = { kind: 'suspend' | 'revoke-all' | 'revoke-one' | 'activate' | 'extend' | 'permanent'; sessionId?: string; label?: string };
 
 function CustomerPanel({ api, id, fail, inform, back, history }: { api: AdminClient; id: string; fail: (r: AdminFailure) => void; inform: (m: string) => void; back: () => void; history: () => void }) {
-  const [d, setD] = useState<CustomerDetail | null>(null); const [err, setErr] = useState(''); const [pending, setPending] = useState<Pending | null>(null);
+  const [d, setD] = useState<CustomerDetail | null>(null); const [err, setErr] = useState(''); const [pending, setPending] = useState<Pending | null>(null); const [editing, setEditing] = useState<'email' | 'term' | null>(null);
   const load = useCallback(async () => { const r = await api.customer(id); if (r.ok) { setD(r.value); setErr(''); } else { setErr(ADMIN_MESSAGES[r.reason]); fail(r.reason); } }, [api, id, fail]);
   useEffect(() => { void load(); }, [load]);
   if (!d) return <><Head title="Cliente" /><button className="secondary" onClick={back}>Voltar à lista</button>{err ? <div className="notice error" role="alert" style={{ marginTop: 12 }}>{err}</div> : <p className="muted" role="status">Carregando…</p>}</>;
@@ -212,13 +212,16 @@ function CustomerPanel({ api, id, fail, inform, back, history }: { api: AdminCli
     <section className="card stack" style={{ marginBottom: 16 }}><h2 className="section-title">Conta</h2>
       <dl className="admin-dl"><dt>Licença</dt><dd>{statusTag(c.status)}{c.suspendedAt && ` desde ${when(c.suspendedAt)}`}</dd><dt>Identificador da conta</dt><dd>{c.accountId ?? 'ainda não entrou (sem conta criada)'}</dd><dt>Licença (ID)</dt><dd>{c.id}</dd><dt>Nome</dt><dd><NameEditor api={api} id={id} name={c.name} fail={fail} saved={async msg => { inform(msg); await load(); }} /></dd><dt>E-mail</dt><dd>{c.email}</dd>{c.label && <><dt>Rótulo</dt><dd>{c.label}</dd></>}
         <dt>Cadastro</dt><dd>{when(c.createdAt)}</dd><dt>Primeiro acesso</dt><dd>{when(c.emailVerifiedAt)}</dd><dt>Último acesso</dt><dd>{c.accountId ? when(c.lastAccessAt) : '—'}</dd><dt>Limites</dt><dd>{c.quotaActive} links ativos · {c.quotaDaily} novos por dia</dd><dt>Prazo</dt><dd>{trialText(c)?.text ?? 'Sem prazo (licença permanente)'}</dd></dl>
-      {c.isAdmin ? <div className="notice warn">Conta administrativa: não pode ser suspensa nem desconectada por este painel.</div> : <div className="admin-actions">{c.status === 'active' ? <button className="secondary danger" onClick={() => setPending({ kind: 'suspend' })}>Suspender acesso</button> : <button className="primary" onClick={() => setPending({ kind: 'activate' })}>Reativar acesso</button>}{c.trialDays !== null && <><button className="secondary" onClick={() => setPending({ kind: 'extend' })}>Prorrogar teste em 7 dias</button><button className="secondary" onClick={() => setPending({ kind: 'permanent' })}>Tornar licença permanente</button></>}</div>}</section>
+      {c.isAdmin ? <div className="notice warn">Conta administrativa: não pode ser suspensa nem desconectada por este painel.</div> : <div className="admin-actions">{c.status === 'active' ? <button className="secondary danger" onClick={() => setPending({ kind: 'suspend' })}>Suspender acesso</button> : <button className="primary" onClick={() => setPending({ kind: 'activate' })}>Reativar acesso</button>}{c.trialDays !== null && <button className="secondary" onClick={() => setPending({ kind: 'extend' })}>Prorrogar teste em 7 dias</button>}</div>}
+      <div className="admin-actions"><button className="secondary" onClick={() => setEditing('email')}>Alterar e-mail</button><button className="secondary" onClick={() => setEditing('term')}>Alterar prazo</button></div></section>
     <section className="card stack" style={{ marginBottom: 16 }}><h2 className="section-title">Sessões ativas ({d.sessions.length})</h2>
       {!d.sessions.length ? <p className="muted">Nenhum dispositivo conectado.</p> : <ul className="admin-rows">{d.sessions.map(s => <li key={s.id} className="admin-row"><div className="main"><strong>{s.deviceLabel ?? 'Dispositivo'}</strong><div className="meta"><span>Último uso: {when(s.lastSeenAt)}</span><span>Entrou em: {when(s.createdAt)}</span><span>Expira: {when(s.expiresAt)}</span></div></div>{!c.isAdmin && <button className="secondary danger" onClick={() => setPending({ kind: 'revoke-one', sessionId: s.id, label: s.deviceLabel ?? 'dispositivo' })}>Revogar</button>}</li>)}</ul>}
       {!c.isAdmin && d.sessions.length > 0 && <div className="admin-actions"><button className="secondary danger" onClick={() => setPending({ kind: 'revoke-all' })}>Revogar todas as sessões</button></div>}</section>
     <section className="card stack"><h2 className="section-title">Histórico administrativo</h2>
       {!d.history.length ? <p className="muted">Nenhuma ação administrativa registrada para esta conta.</p> : <AuditList events={d.history} />}
       {d.historyHasMore && <div><button className="secondary" onClick={history}>Ver histórico completo</button></div>}</section>
+    {editing === 'email' && <EmailEditor api={api} id={id} current={c.email} close={() => setEditing(null)} fail={fail} done={async msg => { setEditing(null); inform(msg); await load(); }} />}
+    {editing === 'term' && <TermEditor api={api} id={id} customer={c} close={() => setEditing(null)} fail={fail} done={async msg => { setEditing(null); inform(msg); await load(); }} />}
     {pending && <Confirm pending={pending} email={c.email} api={api} id={id} close={() => setPending(null)} done={async msg => { setPending(null); inform(msg); await load(); }} fail={fail} />}</>;
 }
 
@@ -239,6 +242,50 @@ function Confirm({ pending, email, api, id, close, done, fail }: { pending: Pend
     {needsTyping && <Field label={`Para confirmar, digite o e-mail do cliente (${email})`}><input data-autofocus value={typed} onChange={e => setTyped(e.target.value)} autoComplete="off" /></Field>}
     {err && <div className="notice error" role="alert">{err}</div>}
     <div className="modal-actions"><button className="secondary" onClick={close}>Cancelar</button><button className={pending.kind === 'activate' ? 'primary' : 'primary'} disabled={busy || (needsTyping && typed.trim().toLowerCase() !== email)} onClick={() => void run()}>{busy ? 'Aguarde…' : text[2]}</button></div></div></Modal>;
+}
+
+/** Troca de e-mail a pedido do cliente: digita o novo e confirma digitando o atual (conferido também no servidor). */
+function EmailEditor({ api, id, current, close, done, fail }: { api: AdminClient; id: string; current: string; close: () => void; done: (msg: string) => Promise<void>; fail: (r: AdminFailure) => void }) {
+  const [next, setNext] = useState(''); const [typed, setTyped] = useState(''); const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
+  const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next.trim()) && typed.trim().toLowerCase() === current;
+  async function submit(e: FormEvent) {
+    e.preventDefault(); setBusy(true); setErr('');
+    const r = await api.changeEmail(id, next.trim(), typed.trim()); setBusy(false);
+    if (!r.ok) { setErr(r.reason === 'conflict' ? 'Este e-mail já está cadastrado em outra conta.' : ADMIN_MESSAGES[r.reason]); fail(r.reason); return; }
+    await done(r.value.changed ? `E-mail alterado para ${r.value.email}. O próximo login do cliente usa o e-mail novo.` : 'O e-mail já era esse; nada mudou.');
+  }
+  return <Modal title="Alterar e-mail" titleId="edit-email" onClose={close} closeLabel="Fechar"><form className="stack" onSubmit={submit}>
+    <p style={{ margin: 0 }}>Use quando o cliente pedir. Os dados, os aparelhos conectados e o histórico continuam; o próximo login passa a ser pelo e-mail novo, e códigos já enviados ao e-mail antigo deixam de valer.</p>
+    <Field label="Novo e-mail"><input type="email" data-autofocus value={next} onChange={e => setNext(e.target.value)} required autoComplete="off" /></Field>
+    <Field label={`Para confirmar, digite o e-mail atual (${current})`}><input value={typed} onChange={e => setTyped(e.target.value)} autoComplete="off" /></Field>
+    {err && <div className="notice error" role="alert">{err}</div>}
+    <div className="modal-actions"><button type="button" className="secondary" onClick={close}>Cancelar</button><button className="primary" disabled={busy || !ok}>{busy ? 'Salvando…' : 'Alterar e-mail'}</button></div></form></Modal>;
+}
+
+/** Prazo da licença: escolher a data de fim (atalhos +7/+14/+30 dias) ou deixar sem prazo. */
+function TermEditor({ api, id, customer, close, done, fail }: { api: AdminClient; id: string; customer: Pick<CustomerRow, 'trialDays' | 'trialEndsAt'>; close: () => void; done: (msg: string) => Promise<void>; fail: (r: AdminFailure) => void }) {
+  const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' }); // AAAA-MM-DD no horário de Brasília
+  const base = customer.trialEndsAt && customer.trialEndsAt.slice(0, 10) >= today ? new Date(customer.trialEndsAt).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' }) : today;
+  const plus = (n: number) => { const d = new Date(`${base}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+  const [date, setDate] = useState(customer.trialEndsAt ? base : plus(14)); const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
+  const permanent = customer.trialDays === null && !customer.trialEndsAt;
+  async function save(e: FormEvent) {
+    e.preventDefault(); setBusy(true); setErr('');
+    const r = await api.setTrialUntil(id, date); setBusy(false);
+    if (!r.ok) { setErr(ADMIN_MESSAGES[r.reason]); fail(r.reason); return; }
+    await done(`Prazo definido: acesso até ${new Date(`${date}T12:00:00Z`).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}.`);
+  }
+  async function makePermanent() {
+    setBusy(true); setErr(''); const r = await api.makePermanent(id); setBusy(false);
+    if (!r.ok) { setErr(ADMIN_MESSAGES[r.reason]); fail(r.reason); return; }
+    await done(r.value.changed === false ? 'A licença já era permanente.' : 'Licença agora é permanente (sem prazo).');
+  }
+  return <Modal title="Alterar prazo da licença" titleId="edit-term" onClose={close} closeLabel="Fechar"><form className="stack" onSubmit={save}>
+    <p style={{ margin: 0 }}>Hoje: <strong>{permanent ? 'sem prazo (licença permanente)' : trialText(customer)?.text ?? '—'}</strong>. O acesso vale até o fim do dia escolhido (horário de Brasília). Se o cliente ainda não entrou, o prazo passa a ser esta data, e não mais "a partir do primeiro acesso".</p>
+    <Field label="Acesso até"><input type="date" data-autofocus value={date} min={today} onChange={e => setDate(e.target.value)} required /></Field>
+    <div className="admin-actions" style={{ marginTop: 0 }}>{[7, 14, 30].map(n => <button key={n} type="button" className="secondary" onClick={() => setDate(plus(n))}>+{n} dias</button>)}</div>
+    {err && <div className="notice error" role="alert">{err}</div>}
+    <div className="modal-actions">{!permanent && <button type="button" className="secondary" disabled={busy} onClick={() => void makePermanent()}>Tornar permanente (sem prazo)</button>}<button type="button" className="secondary" onClick={close}>Cancelar</button><button className="primary" disabled={busy || !date || date < today}>{busy ? 'Salvando…' : 'Salvar prazo'}</button></div></form></Modal>;
 }
 
 function AuditList({ events }: { events: AuditEvent[] }) {

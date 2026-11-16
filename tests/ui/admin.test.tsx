@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AdminApp from '../../src/admin/AdminApp';
@@ -47,6 +47,25 @@ describe('Painel /admin', () => {
     await u.click(screen.getByRole('button', { name: 'Voltar à lista' })); await u.click(await screen.findByRole('button', { name: /Cadastrar cliente/ })); await u.type(screen.getByLabelText(/Nome da pessoa/), 'Outra'); await u.type(screen.getByLabelText('E-mail do cliente'), 'nova@exemplo.com'); await u.click(screen.getByRole('button', { name: 'Cadastrar' }));
     expect(await screen.findByText(/Já existe uma licença/)).toBeTruthy(); expect(srv.table('licenses').filter(l => l.email === 'nova@exemplo.com')).toHaveLength(1);
     expect(srv.table('licenses').find(l => l.email === 'nova@exemplo.com')?.holder_name).toBe('Nova Silva'); // nada sobrescrito
+  });
+  it('altera o e-mail (confirmando o atual) e o prazo da licença pela ficha', async () => {
+    const u = userEvent.setup(); open(); await toDetail(u, 'ana@exemplo.com');
+    await u.click(screen.getByRole('button', { name: 'Alterar e-mail' }));
+    await u.type(screen.getByLabelText('Novo e-mail'), 'ana.nova@exemplo.com');
+    const submit = within(screen.getByRole('dialog')).getByRole('button', { name: 'Alterar e-mail' }) as HTMLButtonElement;
+    expect(submit.disabled).toBe(true); // falta confirmar o e-mail atual
+    await u.type(screen.getByLabelText(/digite o e-mail atual/), 'ana@exemplo.com'); await u.click(submit);
+    expect(await screen.findByText(/E-mail alterado para ana.nova@exemplo.com/)).toBeTruthy();
+    expect(srv.table('licenses').some(l => l.email === 'ana.nova@exemplo.com')).toBe(true);
+    await u.click(screen.getByRole('button', { name: 'Alterar prazo' }));
+    const dialog = screen.getByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Acesso até'), { target: { value: '2027-12-31' } });
+    await u.click(within(dialog).getByRole('button', { name: 'Salvar prazo' }));
+    expect(await screen.findByText(/Prazo definido: acesso até 31\/12\/2027/)).toBeTruthy();
+    expect(srv.table('licenses').find(l => l.email === 'ana.nova@exemplo.com')?.expires_at).toBe('2028-01-01T02:59:59.999Z');
+    await u.click(screen.getByRole('button', { name: 'Alterar prazo' }));
+    await u.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Tornar permanente/ }));
+    expect(await screen.findByText(/Licença agora é permanente/)).toBeTruthy();
   });
   it('mostra e altera o nome da pessoa na ficha (registrado no histórico)', async () => {
     const u = userEvent.setup(); open(); await toDetail(u, 'ana@exemplo.com');

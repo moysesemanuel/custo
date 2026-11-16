@@ -122,3 +122,8 @@ Verificação adicional por código de e-mail para ações sensíveis (gasta cot
 - **No app:** o nome volta na sessão (`license.holderName`) e a Visão geral cumprimenta pelo primeiro nome ("Boa tarde, Lana!"), pela hora do aparelho. Sem nome cadastrado, a saudação fica sem nome.
 - **Dados existentes:** licenças antigas ficam sem nome (NULL) até alguém informar pela ficha. Migração aditiva (só `ADD COLUMN`).
 - **Ordem de publicação:** migração 0014 **antes** do Worker novo (o login lê a coluna nova).
+
+## Editar cliente: e-mail e prazo
+
+- **Alterar e-mail** (ficha do cliente → "Alterar e-mail"; `POST /api/admin/customers/:id/email` com `{ email, confirmEmail }`): para quando o cliente pedir. Exige digitar o e-mail **atual** (conferido no servidor). Muda o e-mail da licença e da conta juntos; recusa (409) se o e-mail novo já estiver em outra conta. Dados, aparelhos conectados e histórico continuam; o próximo login usa o e-mail novo e códigos pendentes do antigo deixam de valer. Auditoria: `customer.email-change`.
+- **Alterar prazo** (ficha → "Alterar prazo"; `POST /api/admin/customers/:id/trial/until` com `{ date: "AAAA-MM-DD" }`): o acesso vale até o fim do dia escolhido (horário de Brasília). Aceita de hoje até 3 anos; data passada é recusada (para tirar o acesso agora, use "Suspender"). Funciona também numa licença permanente (passa a ter prazo) e, antes do primeiro acesso, fixa a data em vez de contar a partir do login. No mesmo diálogo: atalhos +7/+14/+30 dias e "Tornar permanente". Auditoria: `customer.trial-until` (detalhe = a data).

@@ -49,7 +49,7 @@ export async function adminRoute(request: Request, env: SessionEnv, deps: AdminD
   const write = method !== 'GET' && method !== 'HEAD';
   if (method !== 'GET' && method !== 'POST' && method !== 'DELETE') return apiError(405, 'METHOD_NOT_ALLOWED', 'Método não permitido.');
 
-  const m = path.match(/^\/api\/admin\/customers\/(lic_[0-9a-f]{16})(?:\/(suspend|activate|sessions|trial|name)(?:\/(revoke-all|extend|permanent|ses_[0-9a-f]{16}))?)?$/);
+  const m = path.match(/^\/api\/admin\/customers\/(lic_[0-9a-f]{16})(?:\/(suspend|activate|sessions|trial|name|email)(?:\/(revoke-all|extend|permanent|until|ses_[0-9a-f]{16}))?)?$/);
   const known = path === '/api/admin/me' || path === '/api/admin/overview' || path === '/api/admin/customers' || path === '/api/admin/audit' || m;
   if (!known) return apiError(404, 'NOT_FOUND', 'Rota não encontrada.');
   const gate = await authorizeAdmin(request, env, deps, write);
@@ -184,6 +184,46 @@ export async function adminRoute(request: Request, env: SessionEnv, deps: AdminD
         auditStatement(env.DB, { at: iso, adminUserId: admin.userId, action: 'customer.rename', licenseId, targetUserId: c.user_id }),
       ]); await prune();
       return json({ id: licenseId, name, changed: (r[0].meta.changes ?? 0) > 0 });
+    }
+    // Troca do e-mail (pedido do cliente): muda o e-mail da licença e da conta juntos. Exige digitar o e-mail ATUAL (conferido aqui).
+    // Os dados, os dispositivos conectados e o histórico continuam; o próximo login usa o e-mail novo. Códigos pendentes do e-mail antigo são anulados.
+    if (sub === 'email' && !arg && method === 'POST') {
+      const body = await readJsonBody(request, 1024);
+      if (!body.ok) return apiError(body.status, body.error, 'Corpo da requisição inválido.');
+      const b = (body.data ?? {}) as { email?: unknown; confirmEmail?: unknown };
+      if (normalizeEmail(b.confirmEmail) !== c.email) return apiError(400, 'CONFIRMATION_MISMATCH', 'Para confirmar, digite o e-mail atual do cliente.');
+      const next = normalizeEmail(b.email);
+      if (!next) return apiError(400, 'INVALID_EMAIL', 'Informe um e-mail válido.');
+      if (next === c.email) return json({ id: licenseId, email: next, changed: false });
+      const taken = await env.DB.prepare('SELECT (SELECT COUNT(*) FROM licenses WHERE email = ?1) + (SELECT COUNT(*) FROM users WHERE email = ?1) AS n').bind(next).first<{ n: number }>();
+      if ((taken?.n ?? 0) > 0) return apiError(409, 'EMAIL_IN_USE', 'Este e-mail já está cadastrado em outra conta.');
+      try {
+        await env.DB.batch([
+          env.DB.prepare('UPDATE licenses SET email = ?1 WHERE id = ?2 AND email = ?3').bind(next, licenseId, c.email),
+          ...(c.user_id ? [env.DB.prepare('UPDATE users SET email = ?1 WHERE id = ?2').bind(next, c.user_id)] : []),
+          env.DB.prepare('UPDATE auth_codes SET used_at = ?1 WHERE email = ?2 AND used_at IS NULL').bind(iso, c.email),
+          auditStatement(env.DB, { at: iso, adminUserId: admin.userId, action: 'customer.email-change', licenseId, targetUserId: c.user_id }),
+        ]);
+      } catch { return apiError(409, 'EMAIL_IN_USE', 'Este e-mail já está cadastrado em outra conta.'); } // UNIQUE: corrida com outro cadastro
+      await prune();
+      return json({ id: licenseId, email: next, changed: true });
+    }
+    // Prazo da licença numa data escolhida (vale até o fim do dia, horário de Brasília). Serve também para dar prazo a uma licença permanente.
+    if (sub === 'trial' && arg === 'until' && method === 'POST') {
+      const body = await readJsonBody(request, 512);
+      if (!body.ok) return apiError(body.status, body.error, 'Corpo da requisição inválido.');
+      const date = (body.data as { date?: unknown } | null)?.date;
+      if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(`${date}T00:00:00Z`)) || new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) !== date) return apiError(400, 'INVALID_REQUEST', 'Data inválida.');
+      const endsAt = new Date(`${date}T23:59:59.999-03:00`).toISOString();
+      if (endsAt <= iso) return apiError(400, 'INVALID_REQUEST', 'Escolha uma data a partir de hoje. Para tirar o acesso agora, use "Suspender acesso".');
+      if (endsAt > addMs(iso, 3 * 366 * DAY)) return apiError(400, 'INVALID_REQUEST', 'Escolha uma data em até 3 anos. Para não ter prazo, torne a licença permanente.');
+      const days = Math.min(365, Math.max(1, Math.ceil((Date.parse(endsAt) - Date.parse(iso)) / DAY)));
+      await env.DB.batch([
+        env.DB.prepare('UPDATE licenses SET expires_at = ?1, trial_days = COALESCE(trial_days, ?2) WHERE id = ?3').bind(endsAt, days, licenseId),
+        auditStatement(env.DB, { at: iso, adminUserId: admin.userId, action: 'customer.trial-until', licenseId, targetUserId: c.user_id, detailSql: `'${date}'` }),
+      ]); await prune();
+      const now = await env.DB.prepare('SELECT trial_days, expires_at FROM licenses WHERE id = ?').bind(licenseId).first<{ trial_days: number; expires_at: string | null }>();
+      return json({ id: licenseId, trialDays: now?.trial_days ?? null, trialEndsAt: now?.expires_at ?? null });
     }
     if (sub === 'trial' && arg === 'permanent' && method === 'POST') {
       const r = await env.DB.batch([
