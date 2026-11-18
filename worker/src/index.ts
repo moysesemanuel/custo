@@ -6,6 +6,7 @@ import { currentSession, logout, requestCode, sessionRevoke, sessionsList, verif
 import { createEmailSender, type EmailSender } from './email';
 import { createCompositeAuthorizer } from './session';
 import { adminRoute } from './adminRoutes';
+import { hubRoute } from './hubRoutes';
 import { supportRoute } from './supportRoutes';
 import type { WorkersAi } from './supportAi';
 import { syncPull, syncPush } from './syncRoutes';
@@ -38,6 +39,10 @@ export interface Env {
   SUPPORT_AI_DAILY_LIMIT?: string;
   /** `on` reativa a autenticação antiga por chave de licença (Bearer). Padrão: desligada. */
   LEGACY_KEY_AUTH?: string;
+  /** SEGREDO (wrangler secret) que o Dabi Hub envia como Bearer para ler saúde e métricas agregadas. Sem ele, /api/hub/* responde 503. */
+  DABI_HUB_TOKEN?: string;
+  /** SEGREDO (wrangler secret), DIFERENTE do DABI_HUB_TOKEN, que libera /api/hub/v1/accounts (buscar, bloquear, prorrogar teste). Sem ele, 503. */
+  DABI_HUB_ADMIN_TOKEN?: string;
   /** `staging` ou `production`. Se definido, requisições do Pages com `X-Dabi-Expect-Env` de OUTRO ambiente são recusadas (421): um Pages de homologação nunca usa o banco de produção por engano. */
   APP_ENV?: string;
 }
@@ -187,6 +192,7 @@ export function createHandler(options: Options) {
       }
       if (pathname === '/api/support' || pathname.startsWith('/api/support/')) return (await supportRoute(request, env, { now }, pathname)) ?? apiError(404, 'NOT_FOUND', 'Rota não encontrada.');
       if (pathname === '/api/admin' || pathname.startsWith('/api/admin/')) return (await adminRoute(request, env, { now }, pathname)) ?? apiError(404, 'NOT_FOUND', 'Rota não encontrada.');
+      if (pathname.startsWith('/api/hub/')) return (await hubRoute(request, env, { now }, pathname)) ?? apiError(404, 'NOT_FOUND', 'Rota não encontrada.');
       if (pathname === SYNC_PATHS.pull || pathname === SYNC_PATHS.push) {
         if (pathname === SYNC_PATHS.pull && method === 'GET') return await syncPull(request, env, authDeps);
         if (pathname === SYNC_PATHS.push && method === 'POST') return await syncPush(request, env, authDeps);

@@ -2,6 +2,8 @@ import type { BoundStatement, D1Like } from './store';
 
 /** Consultas do painel administrativo. Todas parametrizadas; nenhuma lê receitas, ingredientes, encomendas, orçamentos, tokens ou códigos. */
 export const AUDIT_RETENTION_DAYS = 365;
+/** Autor das ações feitas pelo Dabi Hub na auditoria: `hub:<e-mail de quem agiu no hub>`. */
+export const HUB_ACTOR_PREFIX = 'hub:';
 export const PAGE_DEFAULT = 25;
 export const CUSTOMERS_PAGE_MAX = 50;
 export const AUDIT_PAGE_MAX = 100;
@@ -109,4 +111,20 @@ export async function metrics(db: D1Like, nowIso: string, sinceIso: string) {
         (SELECT COUNT(DISTINCT l.user_id) FROM licenses l JOIN sessions s ON s.user_id = l.user_id WHERE l.email IS NOT NULL AND s.last_seen_at >= strftime('%Y-%m-%dT%H:%M:%fZ', ?1, '-7 days')) AS active_7d`).bind(nowIso).first<{ registered: number; logged_in: number; with_orders: number; active_7d: number }>(),
   ]);
   return { lic: lic.results, firsts: firsts.results, quotes: quotes.results, orders: orders.results, status, activity, funnel };
+}
+
+/**
+ * Prorroga o teste em `days` dias: a partir do fim atual, ou de agora se já venceu. Se a pessoa ainda não entrou
+ * (prazo não começou), só aumenta os dias que vão contar a partir do primeiro acesso. Ação e auditoria no mesmo lote.
+ * Quem chama confere antes que a licença é de teste (`trial_days` não nulo) e que `days` é inteiro de 1 a 365.
+ */
+export async function extendTrial(db: D1Like, o: { iso: string; actorId: string; licenseId: string; targetUserId: string | null; days: number }) {
+  if (!Number.isInteger(o.days) || o.days < 1 || o.days > 365) throw new Error('extendTrial: dias inválidos.');
+  const r = await db.batch([
+    db.prepare(`UPDATE licenses SET expires_at = strftime('%Y-%m-%dT%H:%M:%fZ', CASE WHEN expires_at IS NULL OR expires_at < ?1 THEN ?1 ELSE expires_at END, '+' || ?2 || ' days'),
+        trial_days = trial_days + ?2 WHERE id = ?3 AND trial_days IS NOT NULL AND (expires_at IS NOT NULL OR user_id IS NOT NULL)`).bind(o.iso, o.days, o.licenseId),
+    auditStatement(db, { at: o.iso, adminUserId: o.actorId, action: 'customer.trial-extend', licenseId: o.licenseId, targetUserId: o.targetUserId, detailSql: `'+${o.days} dias'` }),
+  ]);
+  if ((r[0].meta.changes ?? 0) === 0) await db.prepare('UPDATE licenses SET trial_days = trial_days + ?1 WHERE id = ?2 AND trial_days IS NOT NULL').bind(o.days, o.licenseId).run();
+  return db.prepare('SELECT trial_days, expires_at FROM licenses WHERE id = ?').bind(o.licenseId).first<{ trial_days: number; expires_at: string | null }>();
 }
