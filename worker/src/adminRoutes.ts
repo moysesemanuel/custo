@@ -1,5 +1,5 @@
 import { addMs, normalizeEmail } from './accounts';
-import { activeSessionsOf, auditStatement, metrics, AUDIT_PAGE_MAX, AUDIT_RETENTION_DAYS, CUSTOMERS_PAGE_MAX, getActiveAdmin, getCustomer, listAudit, listCustomers, overview, PAGE_DEFAULT, pruneAudit } from './adminStore';
+import { activeSessionsOf, auditStatement, extendTrial, HUB_ACTOR_PREFIX, metrics, AUDIT_PAGE_MAX, AUDIT_RETENTION_DAYS, CUSTOMERS_PAGE_MAX, getActiveAdmin, getCustomer, listAudit, listCustomers, overview, PAGE_DEFAULT, pruneAudit } from './adminStore';
 import { apiError, json, readJsonBody } from './http';
 import { generateLicenseId, generateLicenseKey, hashLicenseKey, LICENSE_ID_PATTERN } from './licenses';
 import { LABEL_PATTERN } from './licenseAdmin';
@@ -40,7 +40,7 @@ async function authorizeAdmin(request: Request, env: SessionEnv, deps: AdminDeps
 const pageSize = (raw: string | null, max: number) => { const n = Number(raw); return Number.isInteger(n) && n >= 1 ? Math.min(n, max) : PAGE_DEFAULT; };
 const publicCustomer = (c: { id: string; email: string; label: string | null; holder_name: string | null; status: string; created_at: string; revoked_at: string | null; user_id: string | null; last_seen_at: string | null; is_admin: number; trial_days: number | null; expires_at: string | null }) =>
   ({ id: c.id, email: c.email, label: c.label, name: c.holder_name, status: c.status, createdAt: c.created_at, suspendedAt: c.revoked_at, accountId: c.user_id, lastAccessAt: c.last_seen_at, isAdmin: c.is_admin > 0, trialDays: c.trial_days, trialEndsAt: c.expires_at });
-const publicAudit = (a: Awaited<ReturnType<typeof listAudit>>[number]) => ({ id: a.id, at: a.at, action: a.action, result: a.result, detail: a.detail, admin: a.admin_email ?? (a.admin_user_id === 'cli' ? 'terminal (bootstrap)' : null), licenseId: a.license_id, customerEmail: a.license_email });
+const publicAudit = (a: Awaited<ReturnType<typeof listAudit>>[number]) => ({ id: a.id, at: a.at, action: a.action, result: a.result, detail: a.detail, admin: a.admin_email ?? (a.admin_user_id === 'cli' ? 'terminal (bootstrap)' : a.admin_user_id.startsWith(HUB_ACTOR_PREFIX) ? `Dabi Hub (${a.admin_user_id.slice(HUB_ACTOR_PREFIX.length)})` : null), licenseId: a.license_id, customerEmail: a.license_email });
 
 /** Roteador /api/admin/*. Devolve undefined se a rota não for administrativa. */
 export async function adminRoute(request: Request, env: SessionEnv & SupportEnv, deps: AdminDeps, pathname: string): Promise<Response | undefined> {
@@ -221,14 +221,7 @@ export async function adminRoute(request: Request, env: SessionEnv & SupportEnv,
       const days = body.ok ? (body.data as { days?: unknown } | null)?.days : undefined;
       if (!Number.isInteger(days) || (days as number) < 1 || (days as number) > 365) return apiError(400, 'INVALID_REQUEST', 'Informe de 1 a 365 dias.');
       if (!c.trial_days) return apiError(409, 'NOT_A_TRIAL', 'Esta licença não é de teste.');
-      const r = await env.DB.batch([
-        env.DB.prepare(`UPDATE licenses SET expires_at = strftime('%Y-%m-%dT%H:%M:%fZ', CASE WHEN expires_at IS NULL OR expires_at < ?1 THEN ?1 ELSE expires_at END, '+' || ?2 || ' days'),
-            trial_days = trial_days + ?2 WHERE id = ?3 AND trial_days IS NOT NULL AND (expires_at IS NOT NULL OR user_id IS NOT NULL)`).bind(iso, days, licenseId),
-        auditStatement(env.DB, { at: iso, adminUserId: admin.userId, action: 'customer.trial-extend', licenseId, targetUserId: c.user_id, detailSql: `'+${days as number} dias'` }),
-      ]); await prune();
-      // Ainda não entrou: o prazo nem começou; só aumenta os dias que vão contar a partir do primeiro acesso.
-      if ((r[0].meta.changes ?? 0) === 0) await env.DB.prepare('UPDATE licenses SET trial_days = trial_days + ?1 WHERE id = ?2 AND trial_days IS NOT NULL').bind(days, licenseId).run();
-      const now = await env.DB.prepare('SELECT trial_days, expires_at FROM licenses WHERE id = ?').bind(licenseId).first<{ trial_days: number; expires_at: string | null }>();
+      const now = await extendTrial(env.DB, { iso, actorId: admin.userId, licenseId, targetUserId: c.user_id, days: days as number }); await prune();
       return json({ id: licenseId, trialDays: now?.trial_days ?? null, trialEndsAt: now?.expires_at ?? null });
     }
     if (sub === 'name' && !arg && method === 'POST') {

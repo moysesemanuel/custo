@@ -4,3 +4,7 @@ AUTH_SECRET=troque-por-um-valor-aleatorio-longo-apenas-para-desenvolvimento
 EMAIL_ADAPTER=dev
 # Para testar o Resend de verdade em desenvolvimento (opcional, exige conta própria): EMAIL_ADAPTER=resend, RESEND_API_KEY=... e
 # EMAIL_FROM="Nome <remetente@dominio-verificado>". Os testes automatizados usam uma API simulada e não precisam disso.
+# Opcional: integração com o Dabi Hub (/api/hub/v1/*). Mínimo 32 caracteres; o mesmo valor vai em HUB_PRECO_CERTO_TOKEN no hub.
+# DABI_HUB_TOKEN=
+# Opcional: gestão de contas pelo hub (/api/hub/v1/accounts). OUTRO valor, também com 32+ caracteres; vai em HUB_PRECO_CERTO_ADMIN_TOKEN no hub.
+# DABI_HUB_ADMIN_TOKEN=

@@ -15,6 +15,8 @@ ALLOWED_ORIGINS = "http://localhost:5174,http://127.0.0.1:5174"
 # Autenticação antiga por chave de licença (Bearer). Desligada por padrão; use "on" apenas para migrar clientes antigos.
 LEGACY_KEY_AUTH = "off"
 # Segredos (NÃO ficam aqui): AUTH_SECRET -> `wrangler secret put AUTH_SECRET`; em desenvolvimento, worker/.dev.vars (veja .dev.vars.example).
+# DABI_HUB_TOKEN (opcional) -> `wrangler secret put DABI_HUB_TOKEN --env <ambiente>`: libera /api/hub/v1/* para o Dabi Hub. Sem ele, 503.
+# DABI_HUB_ADMIN_TOKEN (opcional, DIFERENTE do anterior) -> mesmo comando: libera a gestão de contas (/api/hub/v1/accounts). Sem ele, 503.
 # EMAIL_ADAPTER: sem valor = sem envio (login responde 503). "dev" = imprime no terminal, só para desenvolvimento.
 
 [[d1_databases]]
